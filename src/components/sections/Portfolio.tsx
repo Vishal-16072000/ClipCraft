@@ -3,6 +3,7 @@ import { Play, Eye } from "lucide-react";
 import {
   portfolioCategories,
   portfolioItems,
+  portfolioSection,
   type PortfolioCategory,
 } from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
@@ -21,9 +22,9 @@ export function Portfolio() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
-          label="Portfolio"
-          title="Edits that perform on every platform"
-          description="Reel-style previews from real client work — hooks, pacing, and polish built for retention."
+          label={portfolioSection.label}
+          title={portfolioSection.title}
+          description={portfolioSection.description}
         />
 
         <div className="mt-10 flex flex-wrap justify-center gap-2">

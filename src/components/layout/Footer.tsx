@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Mail, Play, Share2, Video } from "lucide-react";
-import { siteConfig } from "../../data/content";
+import { siteConfig, footerContent } from "../../data/content";
 
 export function Footer() {
   return (
@@ -17,13 +17,14 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm text-gray-400 leading-relaxed max-w-xs">
-              {siteConfig.tagline}. Dedicated editors, guaranteed delivery, and
-              edits built to perform.
+              {footerContent.description}
             </p>
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-white mb-4">Product</h4>
+            <h4 className="font-display font-semibold text-white mb-4">
+              {footerContent.productHeading}
+            </h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li>
                 <a href="/#portfolio" className="hover:text-white transition-colors">
@@ -49,7 +50,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-white mb-4">Company</h4>
+            <h4 className="font-display font-semibold text-white mb-4">
+              {footerContent.companyHeading}
+            </h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li>
                 <a href="/#founder" className="hover:text-white transition-colors">
@@ -78,7 +81,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-white mb-4">Connect</h4>
+            <h4 className="font-display font-semibold text-white mb-4">
+              {footerContent.connectHeading}
+            </h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li className="flex items-center gap-2">
                 <Share2 className="h-4 w-4 text-brand-400 shrink-0" />
@@ -103,7 +108,7 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+            © {new Date().getFullYear()} {siteConfig.name}. {footerContent.copyright}
           </p>
           <p className="text-sm text-gray-500">{siteConfig.domain}</p>
         </div>

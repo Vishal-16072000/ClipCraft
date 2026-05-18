@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { pricingPlans } from "../../data/content";
+import { pricingPlans, pricingSection, pricingMicrocopy } from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
 
 export function Pricing() {
@@ -10,9 +10,9 @@ export function Pricing() {
     <section id="pricing" className="section-padding bg-surface-900/40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
-          label="Pricing"
-          title="Plans that scale with your content"
-          description="Transparent monthly pricing. No hidden fees. Upgrade, downgrade, or cancel anytime."
+          label={pricingSection.label}
+          title={pricingSection.title}
+          description={pricingSection.description}
         />
 
         <div className="mt-10 flex justify-center">
@@ -26,7 +26,7 @@ export function Pricing() {
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              Monthly
+              {pricingMicrocopy.monthly}
             </button>
             <button
               type="button"
@@ -37,13 +37,13 @@ export function Pricing() {
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              Yearly
+              {pricingMicrocopy.yearly}
               <span
                 className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                   yearly ? "bg-brand-100 text-brand-700" : "bg-accent-500/20 text-accent-400"
                 }`}
               >
-                2 mo free
+                {pricingMicrocopy.yearlyBadge}
               </span>
             </button>
           </div>
@@ -62,7 +62,7 @@ export function Pricing() {
               {plan.popular && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                   <span className="bg-white text-surface-900 text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-wider">
-                    Most popular
+                    {pricingMicrocopy.popularBadge}
                   </span>
                 </div>
               )}

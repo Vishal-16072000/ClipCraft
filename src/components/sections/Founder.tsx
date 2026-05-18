@@ -1,4 +1,4 @@
-import { founder } from "../../data/content";
+import { founder, founderSection } from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
 import { Check } from "lucide-react";
 
@@ -15,7 +15,7 @@ export function Founder() {
                   {founder.avatar}
                 </div>
                 <div className="absolute -bottom-2 -right-2 glass rounded-xl px-3 py-1.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
-                  Founder-led QA
+                  {founderSection.badge}
                 </div>
               </div>
               <h3 className="mt-6 font-display text-2xl font-bold text-white">
@@ -27,8 +27,8 @@ export function Founder() {
             <div className="lg:col-span-3">
               <SectionHeader
                 align="left"
-                label="From the founder"
-                title="Built by an editor who got tired of creator burnout"
+                label={founderSection.label}
+                title={founderSection.title}
               />
               <p className="mt-6 text-gray-400 text-lg leading-relaxed">
                 {founder.bio}

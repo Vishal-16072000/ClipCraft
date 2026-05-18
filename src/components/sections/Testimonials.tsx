@@ -1,5 +1,5 @@
 import { Quote, Star } from "lucide-react";
-import { testimonials } from "../../data/content";
+import { testimonials, testimonialsSection } from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
 
 export function Testimonials() {
@@ -7,9 +7,9 @@ export function Testimonials() {
     <section id="testimonials" className="section-padding border-t border-white/5">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
-          label="Social proof"
-          title="Creators who stopped editing, started growing"
-          description="Real results from YouTubers, coaches, and agencies shipping more content with less burnout."
+          label={testimonialsSection.label}
+          title={testimonialsSection.title}
+          description={testimonialsSection.description}
         />
 
         <div className="mt-14 grid md:grid-cols-2 gap-5">

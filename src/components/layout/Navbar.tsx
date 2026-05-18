@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Play, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { siteConfig } from "../../data/content";
+import { siteConfig, navbarCopy } from "../../data/content";
 
 const navLinks = [
   { label: "Portfolio", href: "/#portfolio" },
@@ -57,13 +57,13 @@ export function Navbar() {
               to="/upload"
               className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2"
             >
-              Upload
+              {navbarCopy.upload}
             </Link>
             <a
               href="#cta"
               className="text-sm font-bold bg-white text-surface-900 hover:bg-gray-100 px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-white/10"
             >
-              Start Free Trial
+              {navbarCopy.cta}
             </a>
           </div>
 
@@ -94,14 +94,14 @@ export function Navbar() {
               className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
               onClick={() => setOpen(false)}
             >
-              Upload
+              {navbarCopy.upload}
             </Link>
             <a
               href="#cta"
               className="block mt-2 text-center font-bold bg-white text-surface-900 px-4 py-3 rounded-xl"
               onClick={() => setOpen(false)}
             >
-              Start Free Trial
+              {navbarCopy.cta}
             </a>
           </div>
         )}

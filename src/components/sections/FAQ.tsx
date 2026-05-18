@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { faqs } from "../../data/content";
+import { faqs, faqSection } from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
 
 export function FAQ() {
@@ -10,8 +10,9 @@ export function FAQ() {
     <section id="faq" className="section-padding bg-surface-900/30">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
-          label="FAQ"
-          title="Questions creators ask before switching"
+          label={faqSection.label}
+          title={faqSection.title}
+          description={faqSection.description}
         />
 
         <div className="mt-12 space-y-3">

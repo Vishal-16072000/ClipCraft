@@ -1,4 +1,9 @@
-import { trustMetrics, clientLogos, testimonials } from "../../data/content";
+import {
+  trustMetrics,
+  clientLogos,
+  testimonials,
+  trustSection,
+} from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
 import { Quote, Star } from "lucide-react";
 
@@ -9,9 +14,9 @@ export function Trust() {
     <section className="section-padding border-y border-white/5 bg-surface-900/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
-          label="Trusted worldwide"
-          title="Creators and agencies ship with ClipCraft"
-          description="From solo YouTubers to multi-client agencies — consistent quality, predictable delivery, zero editing burnout."
+          label={trustSection.label}
+          title={trustSection.title}
+          description={trustSection.description}
         />
 
         <div className="mt-14 overflow-hidden relative">

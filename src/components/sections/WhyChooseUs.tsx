@@ -1,4 +1,4 @@
-import { whyChooseUs, competitors } from "../../data/content";
+import { whyChooseUs, competitors, whyChooseUsSection } from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
 import { FeatureIcon } from "../ui/FeatureIcon";
 import { X } from "lucide-react";
@@ -11,14 +11,14 @@ export function WhyChooseUs() {
           <div>
             <SectionHeader
               align="left"
-              label="Why ClipCraft"
-              title="Your editing team — without hiring one"
-              description="We combine agency-grade post-production with SaaS reliability. One subscription replaces freelancers, chaos, and 10-hour timelines."
+              label={whyChooseUsSection.label}
+              title={whyChooseUsSection.title}
+              description={whyChooseUsSection.description}
             />
 
             <div className="mt-10 space-y-2">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                What you&apos;re replacing
+                {whyChooseUsSection.competitorsLabel}
               </p>
               {competitors.map((c) => (
                 <div

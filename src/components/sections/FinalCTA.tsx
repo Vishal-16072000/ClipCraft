@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ArrowRight, CheckCircle2, Clock, Zap } from "lucide-react";
+import { finalCta } from "../../data/content";
 
 export function FinalCTA() {
   const [submitted, setSubmitted] = useState(false);
@@ -22,25 +23,24 @@ export function FinalCTA() {
             <div className="max-w-3xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-sm text-white/90 mb-6">
                 <Clock className="h-4 w-4" />
-                <span>Only 12 onboarding slots left this month</span>
+                <span>{finalCta.badge}</span>
               </div>
 
               <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                Stop editing. Start publishing.
+                {finalCta.headline}
               </h2>
               <p className="mt-4 text-lg text-white/80 max-w-xl mx-auto">
-                Join creators who reclaimed 15+ hours a week. Lock in founder pricing
-                and get your first edit within 48 hours.
+                {finalCta.subheadline}
               </p>
 
               <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-white/70">
                 <span className="flex items-center gap-2">
                   <Zap className="h-4 w-4" />
-                  Free onboarding call
+                  {finalCta.perks[0]}
                 </span>
                 <span className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4" />
-                  Cancel anytime
+                  {finalCta.perks[1]}
                 </span>
               </div>
 
@@ -48,10 +48,10 @@ export function FinalCTA() {
                 <div className="mt-10 glass rounded-2xl p-8 border border-white/20 max-w-md mx-auto">
                   <CheckCircle2 className="h-12 w-12 text-white mx-auto mb-4" />
                   <p className="font-display text-xl font-bold text-white">
-                    You&apos;re in.
+                    {finalCta.successTitle}
                   </p>
                   <p className="mt-2 text-white/80 text-sm">
-                    We&apos;ll reach out at {email} within 24 hours to match your editor.
+                    We&apos;ll reach out at {email}. {finalCta.successMessage}
                   </p>
                 </div>
               ) : (
@@ -64,22 +64,20 @@ export function FinalCTA() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@email.com"
+                    placeholder={finalCta.placeholder}
                     className="flex-1 rounded-2xl bg-white/10 border border-white/25 px-5 py-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/40"
                   />
                   <button
                     type="submit"
                     className="inline-flex items-center justify-center gap-2 bg-white text-brand-700 font-bold px-8 py-4 rounded-2xl hover:bg-white/95 transition-colors shrink-0"
                   >
-                    Claim Your Spot
+                    {finalCta.cta}
                     <ArrowRight className="h-5 w-5" />
                   </button>
                 </form>
               )}
 
-              <p className="mt-6 text-xs text-white/50">
-                No spam · Unsubscribe anytime · 14-day satisfaction guarantee on Creator+
-              </p>
+              <p className="mt-6 text-xs text-white/50">{finalCta.disclaimer}</p>
             </div>
           </div>
         </div>

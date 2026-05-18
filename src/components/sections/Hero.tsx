@@ -1,11 +1,5 @@
 import { ArrowRight, Play, Star } from "lucide-react";
-import { heroContent, audienceTags } from "../../data/content";
-
-const reelPreviews = [
-  { label: "Reel · Fitness", gradient: "from-rose-600/50 to-orange-500/30", delay: "0s" },
-  { label: "Short · Edu", gradient: "from-violet-600/50 to-indigo-500/30", delay: "0.5s" },
-  { label: "Podcast clip", gradient: "from-cyan-600/50 to-teal-500/30", delay: "1s" },
-];
+import { heroContent, heroMicrocopy, audienceTags } from "../../data/content";
 
 export function Hero() {
   return (
@@ -83,24 +77,24 @@ export function Hero() {
                   dashboard.clipcraft.in
                 </span>
                 <span className="ml-auto text-[10px] text-emerald-400 font-medium px-2 py-0.5 rounded-full bg-emerald-500/10">
-                  Live
+                  {heroMicrocopy.dashboardStatus}
                 </span>
               </div>
 
               <div className="p-5 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-xs text-gray-500">Active projects</p>
+                    <p className="text-xs text-gray-500">{heroMicrocopy.activeProjects}</p>
                     <p className="font-display text-2xl font-bold text-white">3</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-gray-500">Next delivery</p>
+                    <p className="text-xs text-gray-500">{heroMicrocopy.nextDelivery}</p>
                     <p className="font-display text-lg font-bold text-brand-300">18h</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
-                  {reelPreviews.map((reel) => (
+                  {heroMicrocopy.reels.map((reel) => (
                     <div
                       key={reel.label}
                       className="relative aspect-[9/16] rounded-xl overflow-hidden group"
@@ -134,23 +128,23 @@ export function Hero() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-white font-medium">Your editor · Sameep</p>
                     <p className="text-[10px] text-gray-500 truncate">
-                      Reel #2 ready for review — captions added
+                      {heroMicrocopy.editorStatus}
                     </p>
                   </div>
                   <span className="text-[10px] font-semibold text-brand-300 bg-brand-500/15 px-2 py-1 rounded-lg shrink-0">
-                    Review
+                    {heroMicrocopy.reviewCta}
                   </span>
                 </div>
               </div>
             </div>
 
             <div className="absolute -bottom-5 -left-2 sm:-left-6 glass rounded-2xl px-5 py-3.5 shadow-2xl animate-float border border-white/10">
-              <p className="font-display text-2xl font-bold text-white">24–48hr</p>
-              <p className="text-xs text-gray-400">Guaranteed delivery</p>
+              <p className="font-display text-2xl font-bold text-white">{heroMicrocopy.floatSpeed}</p>
+              <p className="text-xs text-gray-400">{heroMicrocopy.floatSpeedLabel}</p>
             </div>
             <div className="absolute -top-4 -right-2 sm:-right-6 glass rounded-2xl px-5 py-3.5 shadow-2xl animate-float-delayed border border-white/10">
-              <p className="font-display text-2xl font-bold text-emerald-400">+127%</p>
-              <p className="text-xs text-gray-400">Avg. engagement lift</p>
+              <p className="font-display text-2xl font-bold text-emerald-400">{heroMicrocopy.floatRetention}</p>
+              <p className="text-xs text-gray-400">{heroMicrocopy.floatRetentionLabel}</p>
             </div>
           </div>
         </div>

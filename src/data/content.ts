@@ -1,28 +1,56 @@
 export const siteConfig = {
   name: "ClipCraft",
-  tagline: "Managed video editing for creators who ship daily",
+  tagline: "Premium managed editing for creators who scale",
   domain: "clipcraft.in",
   email: "contact@clipcraft.in",
   instagram: "@clipcraft.in",
   youtube: "@ClipCraftHQ",
 };
 
+export const navbarCopy = {
+  upload: "Upload",
+  cta: "Get My Editor",
+};
+
 export const heroContent = {
-  badge: "Trusted by 200+ creators & agencies",
-  headline: "Publish-ready edits.",
-  headlineAccent: "Without touching a timeline.",
+  badge: "200+ creators · 4.9★ · Viral-ready",
+  headline: "Film More.",
+  headlineAccent: "Edit Never.",
   subheadline:
-    "Your dedicated editor turns raw footage into scroll-stopping reels, shorts, and long-form — delivered in 24–48 hours with viral pacing, brand consistency, and unlimited polish.",
-  primaryCta: "Start Free Trial",
-  secondaryCta: "See Our Work",
+    "Premium managed editing. One dedicated editor. Retention-first hooks. Delivered in 24–48 hours.",
+  primaryCta: "Get My Editor",
+  secondaryCta: "See Viral Edits",
   proofLine: "No contracts · Cancel anytime · First edit in 48hrs",
 };
 
+export const heroMicrocopy = {
+  dashboardStatus: "Live",
+  activeProjects: "In production",
+  nextDelivery: "Next drop",
+  editorStatus: "Reel #2 ready — hooks locked",
+  reviewCta: "Review",
+  floatSpeed: "24–48hr",
+  floatSpeedLabel: "Ship daily",
+  floatRetention: "+127%",
+  floatRetentionLabel: "Retention lift",
+  reels: [
+    { label: "Reel · Fitness", gradient: "from-rose-600/50 to-orange-500/30", delay: "0s" },
+    { label: "Short · Edu", gradient: "from-violet-600/50 to-indigo-500/30", delay: "0.5s" },
+    { label: "Podcast clip", gradient: "from-cyan-600/50 to-teal-500/30", delay: "1s" },
+  ],
+};
+
+export const trustSection = {
+  label: "Trusted",
+  title: "The edit team behind daily posters",
+  description: "Speed. Quality. Consistency. Zero timeline grind.",
+};
+
 export const trustMetrics = [
-  { value: "2,400+", label: "Videos delivered" },
-  { value: "4.9/5", label: "Creator satisfaction" },
-  { value: "24hr", label: "Avg. turnaround" },
-  { value: "98%", label: "On-time delivery" },
+  { value: "2,400+", label: "Edits shipped" },
+  { value: "4.9/5", label: "Creator rated" },
+  { value: "24hr", label: "Median delivery" },
+  { value: "98%", label: "On-time" },
 ];
 
 export const clientLogos = [
@@ -35,6 +63,12 @@ export const clientLogos = [
   "AgencyOne",
   "ViralMint",
 ];
+
+export const portfolioSection = {
+  label: "Work",
+  title: "Built to hold the scroll",
+  description: "Real edits. Hook-first. Platform-native. Performance over polish theater.",
+};
 
 export const portfolioCategories = [
   "All",
@@ -49,7 +83,7 @@ export type PortfolioCategory = (typeof portfolioCategories)[number];
 export const portfolioItems = [
   {
     id: "1",
-    title: "Fitness Reel Series",
+    title: "Fitness Reels · 1.2M views",
     category: "Reels" as const,
     client: "FitVerse",
     views: "1.2M",
@@ -58,7 +92,7 @@ export const portfolioItems = [
   },
   {
     id: "2",
-    title: "YouTube Explainer",
+    title: "YouTube · 840K views",
     category: "YouTube" as const,
     client: "EduSpark",
     views: "840K",
@@ -67,7 +101,7 @@ export const portfolioItems = [
   },
   {
     id: "3",
-    title: "Podcast Highlights",
+    title: "Podcast Clips · 320K views",
     category: "Podcast" as const,
     client: "PodFlow",
     views: "320K",
@@ -76,7 +110,7 @@ export const portfolioItems = [
   },
   {
     id: "4",
-    title: "Product Launch Ad",
+    title: "Launch Ad · 2.1M views",
     category: "Ads" as const,
     client: "BrandNest",
     views: "2.1M",
@@ -85,7 +119,7 @@ export const portfolioItems = [
   },
   {
     id: "5",
-    title: "Coaching Shorts",
+    title: "Coach Shorts · 560K views",
     category: "Reels" as const,
     client: "CoachHQ",
     views: "560K",
@@ -94,7 +128,7 @@ export const portfolioItems = [
   },
   {
     id: "6",
-    title: "Agency Case Study",
+    title: "Agency Reel · 1.8M views",
     category: "YouTube" as const,
     client: "AgencyOne",
     views: "1.8M",
@@ -103,60 +137,87 @@ export const portfolioItems = [
   },
 ];
 
+export const whyChooseUsSection = {
+  label: "Why us",
+  title: "Scale content. Skip the timeline.",
+  description: "One subscription. One editor. Viral pacing on repeat.",
+  competitorsLabel: "Stop settling for",
+};
+
 export const whyChooseUs = [
   {
-    title: "Lightning delivery",
-    description:
-      "24–48 hour turnaround on every edit. Pro plan gets 12-hour priority. Miss the deadline — your next edit is free.",
+    title: "Ship in 24–48 hours",
+    description: "Pro: 12hr priority. Miss the deadline — next edit free.",
     icon: "zap" as const,
     stat: "24–48hr",
   },
   {
-    title: "Dedicated editor",
-    description:
-      "One editor learns your brand, pacing, and hooks. No Fiverr roulette. No briefing from scratch every upload.",
+    title: "One editor. Your vibe.",
+    description: "No random freelancers. Your style locked from upload one.",
     icon: "user" as const,
-    stat: "1:1 match",
+    stat: "1:1",
   },
   {
-    title: "Viral-first editing",
-    description:
-      "Hook-first cuts, retention pacing, trend-aware captions, and platform-native formats built to stop the scroll.",
+    title: "Hooks that hold",
+    description: "Retention pacing. Trend captions. Built for Reels, Shorts, TikTok.",
     icon: "trending" as const,
     stat: "3× hooks",
   },
   {
-    title: "Unlimited revisions",
-    description:
-      "Pro and Business plans include unlimited polish until it's perfect. Your audience sees only the final cut.",
+    title: "Polish until elite",
+    description: "Unlimited revisions on Pro+. Your feed only sees the final cut.",
     icon: "repeat" as const,
-    stat: "∞ edits",
+    stat: "∞",
   },
 ];
+
+export const competitors = [
+  { name: "Fiverr", issue: "New editor every time. Brand never sticks." },
+  { name: "Vidchops", issue: "₹24K+/mo. Overkill for most creators." },
+  { name: "CapCut nights", issue: "Hours lost. Growth paused." },
+  { name: "WhatsApp editors", issue: "No SLA. No style memory. Chaos." },
+];
+
+export const howItWorksSection = {
+  label: "Process",
+  title: "Upload. Edit. Go viral.",
+  description: "Three steps. No timeline skills. No hiring.",
+  cta: "View pricing",
+};
 
 export const processSteps = [
   {
     step: "01",
-    title: "Upload footage",
-    description:
-      "Drop raw clips, references, and brand notes in your dashboard. We handle codecs, organization, and brief alignment.",
+    title: "Upload",
+    description: "Drop clips + references. We handle the rest.",
     icon: "upload" as const,
   },
   {
     step: "02",
     title: "We edit",
-    description:
-      "Your dedicated editor cuts, grades, captions, and sound-designs — with style memory so every video feels unmistakably you.",
+    description: "Hook-first cut. Captions. Sound. Your style, every time.",
     icon: "sparkles" as const,
   },
   {
     step: "03",
-    title: "You publish",
-    description:
-      "Download platform-ready files or publish straight to Instagram & YouTube. Ship more content without burning out.",
+    title: "Publish",
+    description: "Platform-ready files. Post more. Burn out less.",
     icon: "publish" as const,
   },
 ];
+
+export const pricingSection = {
+  label: "Pricing",
+  title: "Pay for posts, not problems",
+  description: "Scale output. Cancel anytime.",
+};
+
+export const pricingMicrocopy = {
+  monthly: "Monthly",
+  yearly: "Yearly",
+  yearlyBadge: "2 mo free",
+  popularBadge: "Most chosen",
+};
 
 export const pricingPlans = [
   {
@@ -164,31 +225,31 @@ export const pricingPlans = [
     name: "Starter",
     price: 999,
     yearlyPrice: 9999,
-    description: "For creators testing consistent posting.",
+    description: "Start posting consistently.",
     popular: false,
     features: [
-      "4 short edits / month",
-      "1 revision per edit",
-      "48-hour turnaround",
+      "4 short edits / mo",
+      "1 revision each",
+      "48hr delivery",
       "Dedicated editor",
-      "Style profile setup",
+      "Style profile",
     ],
-    cta: "Start Creating",
+    cta: "Start Now",
   },
   {
     id: "creator",
     name: "Creator",
     price: 1999,
     yearlyPrice: 19999,
-    description: "For weekly posters scaling their channel.",
+    description: "Grow the channel. Not the workload.",
     popular: true,
     features: [
-      "8 edits (short + long mix)",
-      "2 revisions per edit",
-      "24-hour turnaround",
-      "Thumbnail included",
+      "8 edits / mo",
+      "2 revisions each",
+      "24hr delivery",
+      "Thumbnails included",
       "Priority support",
-      "Style memory enabled",
+      "Style memory",
     ],
     cta: "Go Creator",
   },
@@ -197,15 +258,15 @@ export const pricingPlans = [
     name: "Pro",
     price: 3499,
     yearlyPrice: 34999,
-    description: "For full-time creators & personal brands.",
+    description: "Full-time creator mode.",
     popular: false,
     features: [
-      "15 edits + 2 long-form (15 min)",
+      "15 edits + 2 long-form",
       "Unlimited revisions",
-      "12-hour priority turnaround",
-      "Thumbnail + captions",
+      "12hr priority",
+      "Captions + thumbnails",
       "Direct editor chat",
-      "Auto-publish (coming soon)",
+      "Auto-publish soon",
     ],
     cta: "Go Pro",
   },
@@ -214,112 +275,144 @@ export const pricingPlans = [
     name: "Business",
     price: 6999,
     yearlyPrice: null,
-    description: "For agencies & teams shipping at volume.",
+    description: "Agencies & teams at volume.",
     popular: false,
     features: [
       "Unlimited edits",
-      "Senior dedicated editor",
-      "Same-day turnaround",
-      "All add-ons included",
-      "WhatsApp priority line",
-      "Custom brand guidelines",
+      "Senior editor",
+      "Same-day delivery",
+      "All add-ons",
+      "WhatsApp priority",
+      "Brand guidelines",
     ],
-    cta: "Talk to Sales",
+    cta: "Talk to Us",
   },
 ];
+
+export const testimonialsSection = {
+  label: "Proof",
+  title: "They quit editing. Growth didn't.",
+  description: "Creators, coaches, agencies — same result: more posts, less grind.",
+};
 
 export const testimonials = [
   {
     name: "Priya Sharma",
-    role: "Fitness Creator · 124K followers",
+    role: "Fitness · 124K",
     quote:
-      "I went from 3 hours per reel to zero. ClipCraft nails my pacing every time — my watch time jumped 40% in six weeks.",
+      "Three hours per reel → zero. Same pacing every time. Watch time up 40% in six weeks.",
     avatar: "PS",
-    metric: "+40% watch time",
+    metric: "+40% retention",
   },
   {
     name: "Rahul Mehta",
-    role: "YouTube Educator · 85K subs",
+    role: "YouTube · 85K subs",
     quote:
-      "Same editor, same quality, every upload. Long-form and Shorts both feel on-brand. It's the best ops hire I never had to make.",
+      "One editor. Every upload on-brand. Shorts and long-form. Best hire I never made.",
     avatar: "RM",
-    metric: "12 videos / mo",
+    metric: "12 vids / mo",
   },
   {
     name: "Ananya Reddy",
-    role: "Food Blogger · 48K followers",
+    role: "Food · 48K",
     quote:
-      "Agency-level edits at a fraction of the cost. No ghosting, no negotiations — just upload and publish. Game changer.",
+      "Elite edits. No ghosting. Upload → approve → post. Output 4× in two months.",
     avatar: "AR",
     metric: "4× output",
   },
   {
     name: "Marcus Chen",
-    role: "Agency Founder · 12 clients",
+    role: "Agency · 12 clients",
     quote:
-      "We white-label ClipCraft for client reels. Turnaround is reliable, revisions are fast, and our margins actually work.",
+      "White-label for client reels. Fast revisions. Margins that actually work.",
     avatar: "MC",
     metric: "12 clients",
   },
 ];
 
+export const founderSection = {
+  label: "Founder",
+  title: "Built because timelines kill momentum",
+  badge: "Founder QA",
+};
+
 export const founder = {
   name: "Arjun Kapoor",
   title: "Founder & CEO",
-  bio: "Former video lead at a top creator agency. Built ClipCraft after watching talented creators burn out on timelines instead of content. Every edit ships with the same bar I'd demand for my own channel.",
+  bio: "Ex video lead at a top creator agency. I watched talent burn out in timelines — not from lack of ideas. ClipCraft exists so you stay on camera, not in post.",
   credentials: [
-    "8+ years in post-production",
-    "Edited for 50+ top Indian creators",
-    "Ex-agency lead, now founder-led QA",
+    "8+ years post-production",
+    "50+ top Indian creators edited",
+    "Founder signs off on quality",
   ],
   avatar: "AK",
 };
 
+export const faqSection = {
+  label: "FAQ",
+  title: "Quick answers",
+  description: "Switch without second-guessing.",
+};
+
 export const faqs = [
   {
-    question: "What exactly is ClipCraft?",
+    question: "What is ClipCraft?",
     answer:
-      "ClipCraft is a managed video editing subscription. You upload raw footage; a dedicated editor returns publish-ready videos — no freelancer hunting, no timeline wrestling, no quality roulette.",
+      "Premium managed video editing on subscription. Upload raw footage — get publish-ready Reels, Shorts, and long-form. No freelancer roulette.",
   },
   {
-    question: "How is this different from Fiverr or Upwork?",
+    question: "Why not Fiverr?",
     answer:
-      "Marketplaces give you a new editor every time, inconsistent style, and zero accountability. ClipCraft gives you one dedicated editor, saved brand preferences, guaranteed turnaround, and one dashboard for everything.",
+      "New editor every job. Inconsistent style. Zero accountability. ClipCraft = one editor, saved brand style, guaranteed speed, one dashboard.",
   },
   {
-    question: "How fast will I get my edits?",
+    question: "How fast?",
     answer:
-      "Starter: 48 hours. Creator: 24 hours. Pro: 12-hour priority. Business: same-day. If we miss your guarantee, you get a free re-edit — no excuses.",
+      "Starter 48hr · Creator 24hr · Pro 12hr · Business same-day. Miss the SLA? Free re-edit.",
   },
   {
-    question: "Can I specify my editing style?",
+    question: "Will it feel like me?",
     answer:
-      "Yes. Your Style Profile stores colors, pacing, music taste, transitions, and brand guidelines. Your editor references it on every project so output stays consistent.",
+      "Yes. Style Profile stores your pacing, colors, music, hooks. Your editor references it every upload.",
   },
   {
-    question: "What formats do you support?",
+    question: "What formats?",
     answer:
-      "Reels, Shorts, TikTok, YouTube long-form, podcast clips, ad creatives, and course content. We deliver in platform-native aspect ratios with captions and thumbnails on higher plans.",
+      "Reels, Shorts, TikTok, YouTube, podcasts, ads, courses. Native ratios. Captions + thumbs on higher tiers.",
   },
   {
-    question: "How does billing work?",
+    question: "Billing?",
     answer:
-      "Monthly or annual subscriptions via Razorpay — UPI, cards, and auto-renewal. Annual plans include 2 months free. Cancel anytime with no lock-in.",
+      "Monthly or annual via Razorpay. Annual = 2 months free. Cancel anytime. No lock-in.",
   },
 ];
+
+export const finalCta = {
+  badge: "12 spots left this month",
+  headline: "Stop editing. Start dominating the feed.",
+  subheadline: "Reclaim 15+ hours a week. First edit in 48 hours.",
+  perks: ["Free onboarding", "Cancel anytime"],
+  cta: "Claim Your Editor",
+  placeholder: "you@email.com",
+  successTitle: "You're in.",
+  successMessage: "We'll match your editor within 24 hours.",
+  disclaimer: "No spam · 14-day guarantee on Creator+",
+};
+
+export const footerContent = {
+  description:
+    "Premium managed video editing for creators and businesses. Speed. Consistency. Viral-ready.",
+  productHeading: "Product",
+  companyHeading: "Company",
+  connectHeading: "Connect",
+  copyright: "All rights reserved.",
+};
 
 export const audienceTags = [
-  "YouTubers",
+  "Creators",
+  "Agencies",
   "Podcasters",
   "Coaches",
-  "Agencies",
-  "Personal brands",
-  "Content creators",
-];
-
-export const competitors = [
-  { name: "Fiverr", issue: "New editor every time, inconsistent quality" },
-  { name: "Vidchops", issue: "₹24K+/mo — overkill for most creators" },
-  { name: "CapCut DIY", issue: "Still costs hours you should spend creating" },
-  { name: "Local freelancers", issue: "No SLA, no style memory, WhatsApp chaos" },
+  "Brands",
+  "YouTubers",
 ];

@@ -1,4 +1,4 @@
-import { processSteps } from "../../data/content";
+import { processSteps, howItWorksSection } from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
 import { FeatureIcon } from "../ui/FeatureIcon";
 import { ArrowRight } from "lucide-react";
@@ -8,9 +8,9 @@ export function HowItWorks() {
     <section id="process" className="section-padding relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
-          label="How it works"
-          title="Upload. We edit. You publish."
-          description="Three steps between raw footage and content that grows your audience — no timeline skills required."
+          label={howItWorksSection.label}
+          title={howItWorksSection.title}
+          description={howItWorksSection.description}
         />
 
         <div className="mt-16 grid md:grid-cols-3 gap-6 lg:gap-8">
@@ -46,7 +46,7 @@ export function HowItWorks() {
             href="#pricing"
             className="inline-flex items-center gap-2 text-brand-400 hover:text-brand-300 font-semibold text-sm transition-colors"
           >
-            See plans & pricing
+            {howItWorksSection.cta}
             <ArrowRight className="h-4 w-4" />
           </a>
         </div>
