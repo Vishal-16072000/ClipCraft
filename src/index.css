@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-brand-800: #5b21b6;
+  --color-brand-900: #4c1d95;
+
+  --color-accent-400: #fb923c;
+  --color-accent-500: #f97316;
+  --color-accent-600: #ea580c;
+
+  --color-surface-900: #0a0a0f;
+  --color-surface-800: #12121a;
+  --color-surface-700: #1a1a26;
+  --color-surface-600: #252533;
+  --color-surface-500: #32324a;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface-900 text-gray-300 font-sans antialiased;
+  }
+
+  ::selection {
+    @apply bg-brand-600/40 text-white;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-400 via-brand-300 to-accent-400 bg-clip-text text-transparent;
+  }
+
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+
+  .glass-strong {
+    @apply bg-white/10 backdrop-blur-2xl border border-white/15;
+  }
+
+  .glow-brand {
+    box-shadow: 0 0 60px -12px rgba(124, 58, 237, 0.5);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 40px -8px rgba(249, 115, 22, 0.4);
+  }
+}
