@@ -4,7 +4,7 @@ import { siteConfig } from "../../data/content";
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-surface-800/50">
+    <footer className="border-t border-white/10 bg-surface-900">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div className="lg:col-span-1">
@@ -16,25 +16,23 @@ export function Footer() {
                 {siteConfig.name}
               </span>
             </Link>
-            <p className="mt-4 text-sm text-gray-400 leading-relaxed">
-              {siteConfig.tagline}. Every creator deserves a dedicated editor —
-              affordable, fast, and reliable.
+            <p className="mt-4 text-sm text-gray-400 leading-relaxed max-w-xs">
+              {siteConfig.tagline}. Dedicated editors, guaranteed delivery, and
+              edits built to perform.
             </p>
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-white mb-4">
-              Product
-            </h4>
+            <h4 className="font-display font-semibold text-white mb-4">Product</h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li>
-                <a href="/#how-it-works" className="hover:text-white transition-colors">
-                  How it Works
+                <a href="/#portfolio" className="hover:text-white transition-colors">
+                  Portfolio
                 </a>
               </li>
               <li>
-                <a href="/#features" className="hover:text-white transition-colors">
-                  Features
+                <a href="/#process" className="hover:text-white transition-colors">
+                  Process
                 </a>
               </li>
               <li>
@@ -51,18 +49,21 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-white mb-4">
-              Company
-            </h4>
+            <h4 className="font-display font-semibold text-white mb-4">Company</h4>
             <ul className="space-y-3 text-sm text-gray-400">
+              <li>
+                <a href="/#founder" className="hover:text-white transition-colors">
+                  About
+                </a>
+              </li>
               <li>
                 <a href="/#faq" className="hover:text-white transition-colors">
                   FAQ
                 </a>
               </li>
               <li>
-                <a href="#waitlist" className="hover:text-white transition-colors">
-                  Join Waitlist
+                <a href="#cta" className="hover:text-white transition-colors">
+                  Get Started
                 </a>
               </li>
               <li>
@@ -70,27 +71,25 @@ export function Footer() {
                   href={`mailto:${siteConfig.email}`}
                   className="hover:text-white transition-colors"
                 >
-                  Contact Us
+                  Contact
                 </a>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-white mb-4">
-              Connect
-            </h4>
+            <h4 className="font-display font-semibold text-white mb-4">Connect</h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li className="flex items-center gap-2">
-                <Share2 className="h-4 w-4 text-brand-400" />
+                <Share2 className="h-4 w-4 text-brand-400 shrink-0" />
                 <span>{siteConfig.instagram}</span>
               </li>
               <li className="flex items-center gap-2">
-                <Video className="h-4 w-4 text-brand-400" />
+                <Video className="h-4 w-4 text-brand-400 shrink-0" />
                 <span>{siteConfig.youtube}</span>
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-brand-400" />
+                <Mail className="h-4 w-4 text-brand-400 shrink-0" />
                 <a
                   href={`mailto:${siteConfig.email}`}
                   className="hover:text-white transition-colors"
@@ -106,9 +105,7 @@ export function Footer() {
           <p className="text-sm text-gray-500">
             © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
           </p>
-          <p className="text-sm text-gray-500">
-            Made with ❤️ in India · {siteConfig.domain}
-          </p>
+          <p className="text-sm text-gray-500">{siteConfig.domain}</p>
         </div>
       </div>
     </footer>

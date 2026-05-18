@@ -8,6 +8,9 @@ import {
   Sparkles,
   IndianRupee,
   Share2,
+  Zap,
+  TrendingUp,
+  Repeat,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,6 +24,9 @@ const iconMap: Record<string, LucideIcon> = {
   sparkles: Sparkles,
   rupee: IndianRupee,
   share: Share2,
+  zap: Zap,
+  trending: TrendingUp,
+  repeat: Repeat,
 };
 
 interface IconProps {

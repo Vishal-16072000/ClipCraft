@@ -1,13 +1,15 @@
 import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
 import { Hero } from "../components/sections/Hero";
-import { Stats } from "../components/sections/Stats";
+import { Trust } from "../components/sections/Trust";
+import { Portfolio } from "../components/sections/Portfolio";
+import { WhyChooseUs } from "../components/sections/WhyChooseUs";
 import { HowItWorks } from "../components/sections/HowItWorks";
-import { Features } from "../components/sections/Features";
 import { Pricing } from "../components/sections/Pricing";
 import { Testimonials } from "../components/sections/Testimonials";
+import { Founder } from "../components/sections/Founder";
 import { FAQ } from "../components/sections/FAQ";
-import { Waitlist } from "../components/sections/Waitlist";
+import { FinalCTA } from "../components/sections/FinalCTA";
 
 export function HomePage() {
   return (
@@ -15,13 +17,15 @@ export function HomePage() {
       <Navbar />
       <main>
         <Hero />
-        <Stats />
+        <Trust />
+        <Portfolio />
+        <WhyChooseUs />
         <HowItWorks />
-        <Features />
         <Pricing />
         <Testimonials />
+        <Founder />
         <FAQ />
-        <Waitlist />
+        <FinalCTA />
       </main>
       <Footer />
     </>

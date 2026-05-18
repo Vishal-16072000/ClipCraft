@@ -19,6 +19,7 @@
   --color-accent-500: #f97316;
   --color-accent-600: #ea580c;
 
+  --color-surface-950: #050508;
   --color-surface-900: #0a0a0f;
   --color-surface-800: #12121a;
   --color-surface-700: #1a1a26;
@@ -32,7 +33,7 @@
   }
 
   body {
-    @apply bg-surface-900 text-gray-300 font-sans antialiased;
+    @apply bg-surface-950 text-gray-300 font-sans antialiased;
   }
 
   ::selection {
@@ -42,22 +43,151 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-gradient-to-r from-brand-400 via-brand-300 to-accent-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-white via-brand-200 to-brand-400 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-brand-300 via-brand-400 to-accent-400 bg-clip-text text-transparent;
   }
 
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08];
   }
 
   .glass-strong {
-    @apply bg-white/10 backdrop-blur-2xl border border-white/15;
+    @apply bg-white/[0.06] backdrop-blur-2xl border border-white/[0.12];
   }
 
   .glow-brand {
-    box-shadow: 0 0 60px -12px rgba(124, 58, 237, 0.5);
+    box-shadow:
+      0 0 80px -20px rgba(124, 58, 237, 0.45),
+      0 0 40px -20px rgba(139, 92, 246, 0.25);
   }
 
   .glow-accent {
-    box-shadow: 0 0 40px -8px rgba(249, 115, 22, 0.4);
+    box-shadow: 0 0 60px -12px rgba(249, 115, 22, 0.35);
+  }
+
+  .section-padding {
+    @apply py-20 sm:py-28 lg:py-32;
+  }
+
+  .mesh-gradient {
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 58, 237, 0.25), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(249, 115, 22, 0.08), transparent),
+      radial-gradient(ellipse 50% 30% at 0% 100%, rgba(124, 58, 237, 0.1), transparent);
+  }
+
+  .grid-fade {
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-up-delay-1 {
+    animation: fade-up 0.8s ease-out 0.1s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-up-delay-2 {
+    animation: fade-up 0.8s ease-out 0.2s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-up-delay-3 {
+    animation: fade-up 0.8s ease-out 0.3s forwards;
+    opacity: 0;
+  }
+
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float 6s ease-in-out 2s infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2.5s ease-in-out infinite;
+  }
+
+  .reel-scanline {
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(255, 255, 255, 0.03) 50%,
+      transparent 100%
+    );
+    animation: scanline 3s linear infinite;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
   }
 }

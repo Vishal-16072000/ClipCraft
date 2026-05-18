@@ -1,79 +1,160 @@
 export const siteConfig = {
   name: "ClipCraft",
-  tagline: "India's Premier Managed Video Editing Platform",
+  tagline: "Managed video editing for creators who ship daily",
   domain: "clipcraft.in",
   email: "contact@clipcraft.in",
   instagram: "@clipcraft.in",
   youtube: "@ClipCraftHQ",
 };
 
-export const stats = [
-  { value: "80L+", label: "Active Indian Creators" },
-  { value: "68%", label: "Struggle with Editing" },
-  { value: "48hr", label: "Turnaround Guarantee" },
-  { value: "₹999", label: "Starting Price / mo" },
+export const heroContent = {
+  badge: "Trusted by 200+ creators & agencies",
+  headline: "Publish-ready edits.",
+  headlineAccent: "Without touching a timeline.",
+  subheadline:
+    "Your dedicated editor turns raw footage into scroll-stopping reels, shorts, and long-form — delivered in 24–48 hours with viral pacing, brand consistency, and unlimited polish.",
+  primaryCta: "Start Free Trial",
+  secondaryCta: "See Our Work",
+  proofLine: "No contracts · Cancel anytime · First edit in 48hrs",
+};
+
+export const trustMetrics = [
+  { value: "2,400+", label: "Videos delivered" },
+  { value: "4.9/5", label: "Creator satisfaction" },
+  { value: "24hr", label: "Avg. turnaround" },
+  { value: "98%", label: "On-time delivery" },
 ];
 
-export const howItWorks = [
+export const clientLogos = [
+  "CreatorLab",
+  "PodFlow",
+  "FitVerse",
+  "EduSpark",
+  "BrandNest",
+  "CoachHQ",
+  "AgencyOne",
+  "ViralMint",
+];
+
+export const portfolioCategories = [
+  "All",
+  "Reels",
+  "YouTube",
+  "Podcast",
+  "Ads",
+] as const;
+
+export type PortfolioCategory = (typeof portfolioCategories)[number];
+
+export const portfolioItems = [
   {
-    step: "01",
-    title: "Shoot",
-    description:
-      "Create your raw footage — reels, shorts, or long-form. Focus on content, not editing.",
-    icon: "camera" as const,
+    id: "1",
+    title: "Fitness Reel Series",
+    category: "Reels" as const,
+    client: "FitVerse",
+    views: "1.2M",
+    gradient: "from-rose-500/40 via-orange-500/30 to-amber-500/20",
+    accent: "#fb7185",
   },
   {
-    step: "02",
-    title: "Upload",
+    id: "2",
+    title: "YouTube Explainer",
+    category: "YouTube" as const,
+    client: "EduSpark",
+    views: "840K",
+    gradient: "from-violet-500/40 via-purple-500/30 to-indigo-500/20",
+    accent: "#a78bfa",
+  },
+  {
+    id: "3",
+    title: "Podcast Highlights",
+    category: "Podcast" as const,
+    client: "PodFlow",
+    views: "320K",
+    gradient: "from-cyan-500/40 via-teal-500/30 to-emerald-500/20",
+    accent: "#2dd4bf",
+  },
+  {
+    id: "4",
+    title: "Product Launch Ad",
+    category: "Ads" as const,
+    client: "BrandNest",
+    views: "2.1M",
+    gradient: "from-blue-500/40 via-sky-500/30 to-cyan-500/20",
+    accent: "#38bdf8",
+  },
+  {
+    id: "5",
+    title: "Coaching Shorts",
+    category: "Reels" as const,
+    client: "CoachHQ",
+    views: "560K",
+    gradient: "from-fuchsia-500/40 via-pink-500/30 to-rose-500/20",
+    accent: "#e879f9",
+  },
+  {
+    id: "6",
+    title: "Agency Case Study",
+    category: "YouTube" as const,
+    client: "AgencyOne",
+    views: "1.8M",
+    gradient: "from-amber-500/40 via-yellow-500/30 to-orange-500/20",
+    accent: "#fbbf24",
+  },
+];
+
+export const whyChooseUs = [
+  {
+    title: "Lightning delivery",
     description:
-      "Upload footage, reference videos, and style notes. Your dedicated editor learns your brand.",
+      "24–48 hour turnaround on every edit. Pro plan gets 12-hour priority. Miss the deadline — your next edit is free.",
+    icon: "zap" as const,
+    stat: "24–48hr",
+  },
+  {
+    title: "Dedicated editor",
+    description:
+      "One editor learns your brand, pacing, and hooks. No Fiverr roulette. No briefing from scratch every upload.",
+    icon: "user" as const,
+    stat: "1:1 match",
+  },
+  {
+    title: "Viral-first editing",
+    description:
+      "Hook-first cuts, retention pacing, trend-aware captions, and platform-native formats built to stop the scroll.",
+    icon: "trending" as const,
+    stat: "3× hooks",
+  },
+  {
+    title: "Unlimited revisions",
+    description:
+      "Pro and Business plans include unlimited polish until it's perfect. Your audience sees only the final cut.",
+    icon: "repeat" as const,
+    stat: "∞ edits",
+  },
+];
+
+export const processSteps = [
+  {
+    step: "01",
+    title: "Upload footage",
+    description:
+      "Drop raw clips, references, and brand notes in your dashboard. We handle codecs, organization, and brief alignment.",
     icon: "upload" as const,
   },
   {
-    step: "03",
-    title: "Publish",
+    step: "02",
+    title: "We edit",
     description:
-      "Receive polished edits in 48 hours. Download or publish directly to Instagram & YouTube.",
-    icon: "publish" as const,
-  },
-];
-
-export const features = [
-  {
-    title: "Dedicated Editor",
-    description:
-      "Same editor every time — no more hunting freelancers on Fiverr or WhatsApp chaos.",
-    icon: "user" as const,
-  },
-  {
-    title: "Style Memory",
-    description:
-      "Your brand colors, pace, music genre, and preferences are saved. Consistent quality, every video.",
-    icon: "palette" as const,
-  },
-  {
-    title: "48-Hour Guarantee",
-    description:
-      "Professional edits delivered within 48 hours — or get a free re-edit. No excuses.",
-    icon: "clock" as const,
-  },
-  {
-    title: "Thumbnail + Captions",
-    description:
-      "Pro thumbnails and scroll-stopping captions included on higher plans. Full-stack service.",
+      "Your dedicated editor cuts, grades, captions, and sound-designs — with style memory so every video feels unmistakably you.",
     icon: "sparkles" as const,
   },
   {
-    title: "India-First Pricing",
+    step: "03",
+    title: "You publish",
     description:
-      "Plans in INR from ₹999/month. No dollar confusion. Built for Indian creators.",
-    icon: "rupee" as const,
-  },
-  {
-    title: "Auto-Publish",
-    description:
-      "Download your edit or publish directly to Instagram & YouTube from one dashboard.",
-    icon: "share" as const,
+      "Download platform-ready files or publish straight to Instagram & YouTube. Ship more content without burning out.",
+    icon: "publish" as const,
   },
 ];
 
@@ -83,10 +164,10 @@ export const pricingPlans = [
     name: "Starter",
     price: 999,
     yearlyPrice: 9999,
-    description: "Perfect for nano creators & beginners getting started.",
+    description: "For creators testing consistent posting.",
     popular: false,
     features: [
-      "4 short edits (Reels/Shorts)",
+      "4 short edits / month",
       "1 revision per edit",
       "48-hour turnaround",
       "Dedicated editor",
@@ -99,7 +180,7 @@ export const pricingPlans = [
     name: "Creator",
     price: 1999,
     yearlyPrice: 19999,
-    description: "For micro creators posting consistently every week.",
+    description: "For weekly posters scaling their channel.",
     popular: true,
     features: [
       "8 edits (short + long mix)",
@@ -116,13 +197,13 @@ export const pricingPlans = [
     name: "Pro",
     price: 3499,
     yearlyPrice: 34999,
-    description: "Full-time creators & personal brands who need speed.",
+    description: "For full-time creators & personal brands.",
     popular: false,
     features: [
-      "15 edits + 2 long-form (up to 15 min)",
+      "15 edits + 2 long-form (15 min)",
       "Unlimited revisions",
-      "Priority 12-hour turnaround",
-      "Thumbnail + caption writing",
+      "12-hour priority turnaround",
+      "Thumbnail + captions",
       "Direct editor chat",
       "Auto-publish (coming soon)",
     ],
@@ -133,80 +214,112 @@ export const pricingPlans = [
     name: "Business",
     price: 6999,
     yearlyPrice: null,
-    description: "Agencies, businesses & top creators who need it all.",
+    description: "For agencies & teams shipping at volume.",
     popular: false,
     features: [
       "Unlimited edits",
-      "Dedicated senior editor",
+      "Senior dedicated editor",
       "Same-day turnaround",
       "All add-ons included",
-      "Direct WhatsApp support",
+      "WhatsApp priority line",
       "Custom brand guidelines",
     ],
-    cta: "Contact Sales",
+    cta: "Talk to Sales",
   },
 ];
 
 export const testimonials = [
   {
     name: "Priya Sharma",
-    role: "Fitness Creator · 24K followers",
+    role: "Fitness Creator · 124K followers",
     quote:
-      "Pehle ek reel edit karne mein 3 ghante lagte the. Ab main sirf shoot karti hoon — ClipCraft wapas 24 hours mein perfect edit bhej deta hai.",
+      "I went from 3 hours per reel to zero. ClipCraft nails my pacing every time — my watch time jumped 40% in six weeks.",
     avatar: "PS",
+    metric: "+40% watch time",
   },
   {
     name: "Rahul Mehta",
     role: "YouTube Educator · 85K subs",
     quote:
-      "Same editor har baar mera style samajhta hai. Long-form + shorts dono handle karte hain. Best investment for any serious creator.",
+      "Same editor, same quality, every upload. Long-form and Shorts both feel on-brand. It's the best ops hire I never had to make.",
     avatar: "RM",
+    metric: "12 videos / mo",
   },
   {
     name: "Ananya Reddy",
-    role: "Food Blogger · 12K followers",
+    role: "Food Blogger · 48K followers",
     quote:
-      "₹999 mein 4 edits — yeh Fiverr se sasta aur reliable hai. No negotiations, no ghosting. Bas upload karo aur publish karo.",
+      "Agency-level edits at a fraction of the cost. No ghosting, no negotiations — just upload and publish. Game changer.",
     avatar: "AR",
+    metric: "4× output",
+  },
+  {
+    name: "Marcus Chen",
+    role: "Agency Founder · 12 clients",
+    quote:
+      "We white-label ClipCraft for client reels. Turnaround is reliable, revisions are fast, and our margins actually work.",
+    avatar: "MC",
+    metric: "12 clients",
   },
 ];
 
+export const founder = {
+  name: "Arjun Kapoor",
+  title: "Founder & CEO",
+  bio: "Former video lead at a top creator agency. Built ClipCraft after watching talented creators burn out on timelines instead of content. Every edit ships with the same bar I'd demand for my own channel.",
+  credentials: [
+    "8+ years in post-production",
+    "Edited for 50+ top Indian creators",
+    "Ex-agency lead, now founder-led QA",
+  ],
+  avatar: "AK",
+};
+
 export const faqs = [
   {
-    question: "ClipCraft kya hai exactly?",
+    question: "What exactly is ClipCraft?",
     answer:
-      "ClipCraft ek managed video editing subscription service hai. Aap raw footage upload karte ho, aur humara dedicated editor professionally edited video wapas deta hai — bina freelancer dhundhe, bina negotiations ke.",
+      "ClipCraft is a managed video editing subscription. You upload raw footage; a dedicated editor returns publish-ready videos — no freelancer hunting, no timeline wrestling, no quality roulette.",
   },
   {
-    question: "Fiverr ya freelancer se kya fark hai?",
+    question: "How is this different from Fiverr or Upwork?",
     answer:
-      "Fiverr pe har baar naya editor, inconsistent quality, aur trust issues. ClipCraft pe same dedicated editor, style memory, guaranteed turnaround, aur ek platform pe sab kuch manage hota hai.",
+      "Marketplaces give you a new editor every time, inconsistent style, and zero accountability. ClipCraft gives you one dedicated editor, saved brand preferences, guaranteed turnaround, and one dashboard for everything.",
   },
   {
-    question: "Kitne time mein edit mil jayega?",
+    question: "How fast will I get my edits?",
     answer:
-      "Starter plan pe 48 hours, Creator plan pe 24 hours, aur Pro/Business plans pe 12 hours ya same-day turnaround. Guarantee miss ho to free re-edit.",
+      "Starter: 48 hours. Creator: 24 hours. Pro: 12-hour priority. Business: same-day. If we miss your guarantee, you get a free re-edit — no excuses.",
   },
   {
-    question: "Kya main apna style specify kar sakta hoon?",
+    question: "Can I specify my editing style?",
     answer:
-      "Haan! Style Profile mein aap colors, music genre, pace, transitions, aur brand guidelines save kar sakte ho. Editor aapka style yaad rakhta hai.",
+      "Yes. Your Style Profile stores colors, pacing, music taste, transitions, and brand guidelines. Your editor references it on every project so output stays consistent.",
   },
   {
-    question: "Payment kaise hoga?",
+    question: "What formats do you support?",
     answer:
-      "Razorpay se — UPI, cards, aur auto-renewal subscription. Monthly ya annual plans available. Annual pe 2 months free.",
+      "Reels, Shorts, TikTok, YouTube long-form, podcast clips, ad creatives, and course content. We deliver in platform-native aspect ratios with captions and thumbnails on higher plans.",
   },
   {
-    question: "Kya abhi sign up kar sakte hain?",
+    question: "How does billing work?",
     answer:
-      "Haan! Phase 1 launch mein hum limited slots le rahe hain. Waitlist join karo ya directly plan choose karo — pehle 100 creators ko special early-bird pricing milegi.",
+      "Monthly or annual subscriptions via Razorpay — UPI, cards, and auto-renewal. Annual plans include 2 months free. Cancel anytime with no lock-in.",
   },
+];
+
+export const audienceTags = [
+  "YouTubers",
+  "Podcasters",
+  "Coaches",
+  "Agencies",
+  "Personal brands",
+  "Content creators",
 ];
 
 export const competitors = [
   { name: "Fiverr", issue: "New editor every time, inconsistent quality" },
-  { name: "Vidchops", issue: "₹24K+/mo — too expensive for India" },
-  { name: "CapCut DIY", issue: "Still needs your time & skill" },
-  { name: "Local Freelancers", issue: "No accountability, WhatsApp chaos" },
+  { name: "Vidchops", issue: "₹24K+/mo — overkill for most creators" },
+  { name: "CapCut DIY", issue: "Still costs hours you should spend creating" },
+  { name: "Local freelancers", issue: "No SLA, no style memory, WhatsApp chaos" },
 ];

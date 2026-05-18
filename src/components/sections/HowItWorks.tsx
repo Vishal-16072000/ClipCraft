@@ -1,47 +1,54 @@
-import { howItWorks } from "../../data/content";
+import { processSteps } from "../../data/content";
+import { SectionHeader } from "../ui/SectionHeader";
 import { FeatureIcon } from "../ui/FeatureIcon";
+import { ArrowRight } from "lucide-react";
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-24 sm:py-32">
+    <section id="process" className="section-padding relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto">
-          <span className="text-brand-400 font-semibold text-sm uppercase tracking-wider">
-            Simple Process
-          </span>
-          <h2 className="mt-3 font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-            Shoot. Upload. Publish.
-          </h2>
-          <p className="mt-4 text-gray-400 text-lg">
-            Three steps between you and professionally edited content — no
-            editing skills required.
-          </p>
-        </div>
+        <SectionHeader
+          label="How it works"
+          title="Upload. We edit. You publish."
+          description="Three steps between raw footage and content that grows your audience — no timeline skills required."
+        />
 
-        <div className="mt-16 grid md:grid-cols-3 gap-8">
-          {howItWorks.map((item, index) => (
+        <div className="mt-16 grid md:grid-cols-3 gap-6 lg:gap-8">
+          {processSteps.map((item, index) => (
             <div key={item.step} className="relative group">
-              {index < howItWorks.length - 1 && (
-                <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-px bg-gradient-to-r from-brand-500/50 to-transparent" />
+              {index < processSteps.length - 1 && (
+                <div className="hidden md:flex absolute top-14 -right-4 lg:-right-6 z-10 text-brand-500/40">
+                  <ArrowRight className="h-6 w-6" />
+                </div>
               )}
-              <div className="glass rounded-3xl p-8 h-full hover:bg-white/[0.07] transition-colors">
+              <div className="glass rounded-3xl p-8 h-full hover:bg-white/[0.06] transition-all duration-300 border border-white/5 hover:border-brand-500/20 hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-6">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600/20 text-brand-400 group-hover:bg-brand-600/30 transition-colors">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600/30 to-brand-500/10 text-brand-300 group-hover:from-brand-600/40 transition-colors">
                     <FeatureIcon name={item.icon} className="w-7 h-7" />
                   </div>
-                  <span className="font-display text-5xl font-bold text-white/5 group-hover:text-brand-500/20 transition-colors">
+                  <span className="font-display text-5xl font-bold text-white/[0.04] group-hover:text-brand-500/15 transition-colors">
                     {item.step}
                   </span>
                 </div>
                 <h3 className="font-display text-xl font-bold text-white">
                   {item.title}
                 </h3>
-                <p className="mt-3 text-gray-400 leading-relaxed">
+                <p className="mt-3 text-gray-400 leading-relaxed text-sm">
                   {item.description}
                 </p>
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-12 text-center">
+          <a
+            href="#pricing"
+            className="inline-flex items-center gap-2 text-brand-400 hover:text-brand-300 font-semibold text-sm transition-colors"
+          >
+            See plans & pricing
+            <ArrowRight className="h-4 w-4" />
+          </a>
         </div>
       </div>
     </section>
