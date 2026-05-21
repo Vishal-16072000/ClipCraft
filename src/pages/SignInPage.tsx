@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Loader2,
@@ -20,6 +20,9 @@ const inputClassName =
 
 export function SignInPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo =
+    (location.state as { from?: string } | null)?.from ?? "/dashboard";
   const {
     user,
     loading: authLoading,
@@ -39,9 +42,9 @@ export function SignInPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate("/upload", { replace: true });
+      navigate(redirectTo, { replace: true });
     }
-  }, [authLoading, user, navigate]);
+  }, [authLoading, user, navigate, redirectTo]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -82,7 +85,7 @@ export function SignInPage() {
       if (err) {
         setError(err);
       } else {
-        navigate("/upload", { replace: true });
+        navigate(redirectTo, { replace: true });
       }
     } finally {
       setSubmitting(false);

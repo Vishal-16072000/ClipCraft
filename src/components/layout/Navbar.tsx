@@ -69,16 +69,21 @@ export function Navbar() {
               </Link>
             )}
             {!loading && user && (
-              <span className="text-sm text-gray-400 max-w-[140px] truncate">
-                {displayName}
-              </span>
+              <Link
+                to="/dashboard"
+                className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2"
+              >
+                {navbarCopy.dashboard}
+              </Link>
             )}
-            <Link
-              to="/upload"
-              className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2"
-            >
-              {navbarCopy.upload}
-            </Link>
+            {!loading && !user && (
+              <Link
+                to="/upload"
+                className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2"
+              >
+                {navbarCopy.upload}
+              </Link>
+            )}
             {!loading && user && (
               <button
                 type="button"
@@ -129,27 +134,38 @@ export function Navbar() {
               </Link>
             )}
             {!loading && user && (
-              <div className="px-4 py-3 text-sm text-gray-400 flex items-center justify-between">
-                <span className="truncate">{displayName}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    signOut();
-                    setOpen(false);
-                  }}
-                  className="text-gray-400 hover:text-white"
+              <>
+                <Link
+                  to="/dashboard"
+                  className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                  onClick={() => setOpen(false)}
                 >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
+                  {navbarCopy.dashboard}
+                </Link>
+                <div className="px-4 py-3 text-sm text-gray-400 flex items-center justify-between">
+                  <span className="truncate">{displayName}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      signOut();
+                      setOpen(false);
+                    }}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              </>
             )}
-            <Link
-              to="/upload"
-              className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
-              onClick={() => setOpen(false)}
-            >
-              {navbarCopy.upload}
-            </Link>
+            {!loading && !user && (
+              <Link
+                to="/upload"
+                className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                onClick={() => setOpen(false)}
+              >
+                {navbarCopy.upload}
+              </Link>
+            )}
             <a
               href="#cta"
               className="block mt-2 text-center font-bold bg-white text-surface-900 px-4 py-3 rounded-xl"

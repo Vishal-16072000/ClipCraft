@@ -9,6 +9,7 @@ export const siteConfig = {
 
 export const navbarCopy = {
   signIn: "Sign in",
+  dashboard: "Dashboard",
   upload: "Upload",
   cta: "Get My Editor",
 };
