@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { Play, Menu, X } from "lucide-react";
+import { Play, Menu, X, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { siteConfig, navbarCopy } from "../../data/content";
+import { useAuth } from "../../contexts/AuthContext";
 
 const navLinks = [
   { label: "Portfolio", href: "/#portfolio" },
@@ -11,6 +12,7 @@ const navLinks = [
 ];
 
 export function Navbar() {
+  const { user, loading, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -20,6 +22,11 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const displayName =
+    user?.user_metadata?.full_name ??
+    user?.email?.split("@")[0] ??
+    "Account";
 
   return (
     <header className="fixed top-0 inset-x-0 z-50">
@@ -53,12 +60,35 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
+            {!loading && !user && (
+              <Link
+                to="/signin"
+                className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2"
+              >
+                {navbarCopy.signIn}
+              </Link>
+            )}
+            {!loading && user && (
+              <span className="text-sm text-gray-400 max-w-[140px] truncate">
+                {displayName}
+              </span>
+            )}
             <Link
               to="/upload"
               className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2"
             >
               {navbarCopy.upload}
             </Link>
+            {!loading && user && (
+              <button
+                type="button"
+                onClick={() => signOut()}
+                className="p-2 text-gray-400 hover:text-white transition-colors"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            )}
             <a
               href="#cta"
               className="text-sm font-bold bg-white text-surface-900 hover:bg-gray-100 px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-white/10"
@@ -89,6 +119,30 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
+            {!loading && !user && (
+              <Link
+                to="/signin"
+                className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                onClick={() => setOpen(false)}
+              >
+                {navbarCopy.signIn}
+              </Link>
+            )}
+            {!loading && user && (
+              <div className="px-4 py-3 text-sm text-gray-400 flex items-center justify-between">
+                <span className="truncate">{displayName}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    signOut();
+                    setOpen(false);
+                  }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            )}
             <Link
               to="/upload"
               className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"

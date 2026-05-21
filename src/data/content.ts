@@ -8,6 +8,7 @@ export const siteConfig = {
 };
 
 export const navbarCopy = {
+  signIn: "Sign in",
   upload: "Upload",
   cta: "Get My Editor",
 };
@@ -337,7 +338,7 @@ export const founderSection = {
 };
 
 export const founder = {
-  name: "Arjun Kapoor",
+  name: "Vishal Dhangar",
   title: "Founder & CEO",
   bio: "Ex video lead at a top creator agency. I watched talent burn out in timelines — not from lack of ideas. ClipCraft exists so you stay on camera, not in post.",
   credentials: [
@@ -345,7 +346,7 @@ export const founder = {
     "50+ top Indian creators edited",
     "Founder signs off on quality",
   ],
-  avatar: "AK",
+  avatar: "VD",
 };
 
 export const faqSection = {
