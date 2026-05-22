@@ -1,6 +1,22 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileVideo, ChevronRight, Clock } from "lucide-react";
-import type { Order } from "../../lib/orders";
+import {
+  FileVideo,
+  ChevronRight,
+  Clock,
+  FolderOpen,
+  Loader2,
+  PlayCircle,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import {
+  addOrderFiles,
+  deleteOrderFile,
+  getSignedFileUrl,
+  type Order,
+  type OrderFile,
+} from "../../lib/orders";
 import { StatusBadge } from "./StatusBadge";
 import { PipelineProgress } from "./PipelineProgress";
 
@@ -22,13 +38,146 @@ function formatSize(bytes: number) {
 const totalSize = (order: Order) =>
   order.files.reduce((sum, f) => sum + f.size, 0);
 
+function footageSummary(order: Order) {
+  if (order.files.length > 0) {
+    return `${order.files.length} video${order.files.length !== 1 ? "s" : ""} · ${formatSize(
+      totalSize(order),
+    )}`;
+  }
+
+  return order.footageUrl ? "Google Drive folder" : "No footage attached";
+}
+
+function UploadedVideoPlayer({
+  file,
+  removing,
+  onRemove,
+}: {
+  file: OrderFile;
+  removing: boolean;
+  onRemove: () => void;
+}) {
+  const [preview, setPreview] = useState<{
+    storagePath: string;
+    signedUrl: string | null;
+  } | null>(null);
+  const loading = preview?.storagePath !== file.storagePath;
+  const signedUrl = loading ? null : preview.signedUrl;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getSignedFileUrl(file.storagePath).then((url) => {
+      if (cancelled) return;
+      setPreview({ storagePath: file.storagePath, signedUrl: url });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [file.storagePath]);
+
+  return (
+    <li className="overflow-hidden rounded-2xl border border-white/10 bg-surface-700/50">
+      <div className="relative aspect-video bg-black">
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : signedUrl ? (
+          <video
+            src={signedUrl}
+            controls
+            preload="metadata"
+            className="h-full w-full object-contain"
+          >
+            Your browser does not support video playback.
+          </video>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-gray-500">
+            <PlayCircle className="h-7 w-7 text-gray-600" />
+            Preview unavailable
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-3 px-4 py-3">
+        <FileVideo className="h-5 w-5 shrink-0 text-brand-400" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm text-white">{file.name}</p>
+          <p className="text-xs text-gray-500">{formatSize(file.size)}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={removing}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
+          aria-label={`Remove ${file.name}`}
+          title="Remove clip"
+        >
+          {removing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+    </li>
+  );
+}
+
 export function OrderCard({
   order,
   compact = false,
+  onChanged,
 }: {
   order: Order;
   compact?: boolean;
+  onChanged?: () => void | Promise<void>;
 }) {
+  const [adding, setAdding] = useState(false);
+  const [removingFileId, setRemovingFileId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  async function handleAddClips(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? []).filter((file) =>
+      file.type.startsWith("video/"),
+    );
+    e.target.value = "";
+
+    if (selected.length === 0 || adding) return;
+
+    setActionError(null);
+    setAdding(true);
+    const { error } = await addOrderFiles(order.userId, order.id, selected);
+    setAdding(false);
+
+    if (error) {
+      setActionError(error);
+      return;
+    }
+
+    await onChanged?.();
+  }
+
+  async function handleRemoveClip(file: OrderFile) {
+    if (removingFileId) return;
+
+    const shouldRemove = window.confirm(`Remove "${file.name}" from this order?`);
+    if (!shouldRemove) return;
+
+    setActionError(null);
+    setRemovingFileId(file.id);
+    const { error } = await deleteOrderFile(order.userId, order.id, file);
+    setRemovingFileId(null);
+
+    if (error) {
+      setActionError(error);
+      return;
+    }
+
+    await onChanged?.();
+  }
+
   if (compact) {
     return (
       <Link
@@ -41,7 +190,10 @@ export function OrderCard({
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">{order.title}</p>
           <p className="text-xs text-gray-500 mt-0.5">
-            {order.files.length} file{order.files.length !== 1 ? "s" : ""} ·{" "}
+            {order.files.length > 0
+              ? `${order.files.length} file${order.files.length !== 1 ? "s" : ""}`
+              : "Drive folder"}{" "}
+            ·{" "}
             {formatDate(order.createdAt)}
           </p>
         </div>
@@ -71,30 +223,71 @@ export function OrderCard({
 
       <PipelineProgress status={order.status} />
 
-      <div className="mt-5 pt-5 border-t border-white/10 grid sm:grid-cols-2 gap-4 text-sm">
+      <div className="mt-5 pt-5 border-t border-white/10 space-y-5 text-sm">
         <div>
-          <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">Files</p>
-          <p className="text-white">
-            {order.files.length} video{order.files.length !== 1 ? "s" : ""} ·{" "}
-            {formatSize(totalSize(order))}
-          </p>
-          <ul className="mt-2 space-y-1">
-            {order.files.slice(0, 3).map((f) => (
-              <li key={f.id} className="text-xs text-gray-400 truncate">
-                {f.name}
-              </li>
-            ))}
-            {order.files.length > 3 && (
-              <li className="text-xs text-gray-500">
-                +{order.files.length - 3} more
-              </li>
-            )}
-          </ul>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">
+                Files
+              </p>
+              <p className="text-white">{footageSummary(order)}</p>
+            </div>
+            <label
+              className={`inline-flex w-fit items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors ${
+                adding
+                  ? "cursor-not-allowed bg-white/5 text-gray-500"
+                  : "cursor-pointer bg-brand-600/20 text-brand-300 hover:bg-brand-600/30 hover:text-white"
+              }`}
+            >
+              {adding ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              {adding ? "Adding..." : "Add clips"}
+              <input
+                type="file"
+                accept="video/*"
+                multiple
+                disabled={adding}
+                className="hidden"
+                onChange={handleAddClips}
+              />
+            </label>
+          </div>
+          {actionError && (
+            <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+              {actionError}
+            </p>
+          )}
+          {order.footageUrl && (
+            <a
+              href={order.footageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-surface-700/50 px-4 py-3 text-sm text-brand-300 transition-colors hover:border-brand-500/40 hover:bg-brand-600/10 hover:text-white"
+            >
+              <FolderOpen className="h-5 w-5 shrink-0" />
+              <span className="min-w-0 flex-1 truncate">{order.footageUrl}</span>
+            </a>
+          )}
+          {order.files.length > 0 && (
+            <ul className="mt-3 grid gap-4 sm:grid-cols-2">
+              {order.files.map((file) => (
+                <UploadedVideoPlayer
+                  key={file.id}
+                  file={file}
+                  removing={removingFileId === file.id}
+                  onRemove={() => handleRemoveClip(file)}
+                />
+              ))}
+            </ul>
+          )}
         </div>
         {(order.referenceUrl || order.styleNotes) && (
-          <div>
+          <div className="grid gap-4 sm:grid-cols-2">
             {order.referenceUrl && (
-              <div className="mb-3">
+              <div>
                 <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">
                   Reference
                 </p>

@@ -1,11 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Upload,
   FileVideo,
   Link2,
   MessageSquare,
-  X,
+  Trash2,
   CheckCircle2,
   Clock,
   Loader2,
@@ -16,10 +16,61 @@ import { createOrder } from "../../lib/orders";
 import { dashboardCopy } from "../../data/dashboard";
 import { PipelineProgress } from "./PipelineProgress";
 
+function VideoPreview({
+  file,
+  disabled,
+  onRemove,
+  formatSize,
+}: {
+  file: File;
+  disabled: boolean;
+  onRemove: () => void;
+  formatSize: (bytes: number) => string;
+}) {
+  const previewUrl = useMemo(() => URL.createObjectURL(file), [file]);
+
+  useEffect(() => {
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  return (
+    <li className="overflow-hidden rounded-2xl bg-surface-700/50 border border-white/10">
+      {previewUrl && (
+        <video
+          src={previewUrl}
+          controls
+          preload="metadata"
+          className="aspect-video w-full bg-black object-contain"
+        >
+          Your browser does not support video preview.
+        </video>
+      )}
+      <div className="flex items-center gap-3 px-4 py-3">
+        <FileVideo className="h-5 w-5 text-brand-400 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-white truncate">{file.name}</p>
+          <p className="text-xs text-gray-500">{formatSize(file.size)}</p>
+        </div>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onRemove}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-colors disabled:opacity-40"
+          aria-label={`Remove ${file.name}`}
+          title="Remove video"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </li>
+  );
+}
+
 export function UploadForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [files, setFiles] = useState<File[]>([]);
+  const [footageUrl, setFootageUrl] = useState("");
   const [referenceUrl, setReferenceUrl] = useState("");
   const [styleNotes, setStyleNotes] = useState("");
   const [title, setTitle] = useState("");
@@ -32,15 +83,27 @@ export function UploadForm() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
+
+    if (uploading || footageUrl.trim()) return;
+
     const dropped = Array.from(e.dataTransfer.files).filter((f) =>
       f.type.startsWith("video/"),
     );
     setFiles((prev) => [...prev, ...dropped]);
-  }, []);
+  }, [footageUrl, uploading]);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    if (footageUrl.trim()) {
+      e.target.value = "";
+      return;
+    }
+
     if (e.target.files) {
-      setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+      const selected = Array.from(e.target.files).filter((f) =>
+        f.type.startsWith("video/"),
+      );
+      setFiles((prev) => [...prev, ...selected]);
+      e.target.value = "";
     }
   }
 
@@ -55,9 +118,36 @@ export function UploadForm() {
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   }
 
+  function isGoogleDriveUrl(url: string) {
+    if (!url.trim()) return true;
+
+    try {
+      const host = new URL(url).hostname.replace(/^www\./, "");
+      return host === "drive.google.com" || host === "docs.google.com";
+    } catch {
+      return false;
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || files.length === 0 || uploading) return;
+    const cleanFootageUrl = footageUrl.trim();
+    if (!user || uploading) return;
+
+    if (files.length === 0 && !cleanFootageUrl) {
+      setError("Upload video files or add a Google Drive folder link.");
+      return;
+    }
+
+    if (files.length > 0 && cleanFootageUrl) {
+      setError("Choose one footage option: upload videos or add a Drive folder link.");
+      return;
+    }
+
+    if (!isGoogleDriveUrl(cleanFootageUrl)) {
+      setError("Please add a valid Google Drive folder link.");
+      return;
+    }
 
     setError(null);
     setUploading(true);
@@ -67,6 +157,7 @@ export function UploadForm() {
       user.id,
       {
         title,
+        footageUrl: cleanFootageUrl || undefined,
         referenceUrl: referenceUrl || undefined,
         styleNotes: styleNotes || undefined,
       },
@@ -87,12 +178,19 @@ export function UploadForm() {
   function resetForm() {
     setSubmitted(false);
     setFiles([]);
+    setFootageUrl("");
     setTitle("");
     setReferenceUrl("");
     setStyleNotes("");
     setError(null);
     setUploadProgress({ done: 0, total: 0 });
   }
+
+  const hasFiles = files.length > 0;
+  const hasDriveLink = footageUrl.trim().length > 0;
+  const uploadDisabled = uploading || hasDriveLink;
+  const driveDisabled = uploading || hasFiles;
+  const canSubmit = (hasFiles || hasDriveLink) && !uploading;
 
   if (submitted) {
     return (
@@ -102,7 +200,7 @@ export function UploadForm() {
           Order submitted
         </h2>
         <p className="mt-3 text-gray-400 max-w-md mx-auto">
-          Your footage is saved in Supabase. Track progress from your dashboard.
+          Your footage details are saved. Track progress from your dashboard.
         </p>
         <div className="mt-8 flex justify-center">
           <PipelineProgress status="received" />
@@ -170,10 +268,15 @@ export function UploadForm() {
 
         <div
           className={`glass rounded-2xl p-8 border-2 border-dashed transition-colors ${
-            dragOver ? "border-brand-500 bg-brand-600/10" : "border-white/10"
+            uploadDisabled
+              ? "border-white/10 opacity-50"
+              : dragOver
+                ? "border-brand-500 bg-brand-600/10"
+                : "border-white/10"
           }`}
           onDragOver={(e) => {
             e.preventDefault();
+            if (uploadDisabled) return;
             setDragOver(true);
           }}
           onDragLeave={() => setDragOver(false)}
@@ -183,15 +286,25 @@ export function UploadForm() {
             <Upload className="h-12 w-12 text-brand-400 mx-auto mb-4" />
             <p className="text-white font-medium">Drag & drop video files here</p>
             <p className="text-sm text-gray-500 mt-1">MP4, MOV, AVI up to 2GB per file</p>
-            <label className="mt-4 inline-block cursor-pointer">
-              <span className="text-sm font-semibold text-brand-400 hover:text-brand-300">
-                Browse files
+            <label
+              className={`mt-4 inline-block ${
+                uploadDisabled ? "cursor-not-allowed" : "cursor-pointer"
+              }`}
+            >
+              <span
+                className={`text-sm font-semibold ${
+                  uploadDisabled
+                    ? "text-gray-500"
+                    : "text-brand-400 hover:text-brand-300"
+                }`}
+              >
+                {hasDriveLink ? "Drive link selected" : "Browse files"}
               </span>
               <input
                 type="file"
                 accept="video/*"
                 multiple
-                disabled={uploading}
+                disabled={uploadDisabled}
                 className="hidden"
                 onChange={handleFileSelect}
               />
@@ -199,30 +312,50 @@ export function UploadForm() {
           </div>
 
           {files.length > 0 && (
-            <ul className="mt-6 space-y-2">
+            <ul className="mt-6 grid gap-4 sm:grid-cols-2">
               {files.map((file, i) => (
-                <li
-                  key={`${file.name}-${i}`}
-                  className="flex items-center gap-3 bg-surface-700/50 rounded-xl px-4 py-3"
-                >
-                  <FileVideo className="h-5 w-5 text-brand-400 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">{file.name}</p>
-                    <p className="text-xs text-gray-500">{formatSize(file.size)}</p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={uploading}
-                    onClick={() => removeFile(i)}
-                    className="p-1 text-gray-500 hover:text-red-400 transition-colors disabled:opacity-40"
-                    aria-label="Remove file"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </li>
+                <VideoPreview
+                  key={`${file.name}-${file.size}-${file.lastModified}-${i}`}
+                  file={file}
+                  disabled={uploading}
+                  onRemove={() => removeFile(i)}
+                  formatSize={formatSize}
+                />
               ))}
             </ul>
           )}
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="h-px flex-1 bg-white/10" />
+          <span className="rounded-full border border-white/10 bg-surface-800 px-4 py-1 text-xs font-bold uppercase tracking-wide text-gray-400">
+            OR
+          </span>
+          <div className="h-px flex-1 bg-white/10" />
+        </div>
+
+        <div className="glass rounded-2xl p-6">
+          <label
+            htmlFor="footage"
+            className="flex items-center gap-2 text-sm font-medium text-white mb-2"
+          >
+            <Link2 className="h-4 w-4 text-brand-400" />
+            Google Drive folder link
+          </label>
+          <input
+            id="footage"
+            type="url"
+            disabled={driveDisabled}
+            value={footageUrl}
+            onChange={(e) => setFootageUrl(e.target.value)}
+            placeholder="https://drive.google.com/drive/folders/..."
+            className="w-full rounded-xl bg-surface-700/50 border border-white/10 px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 disabled:opacity-50"
+          />
+          <p className="mt-2 text-xs text-gray-500">
+            {hasFiles
+              ? "Remove selected videos to use a Drive folder link."
+              : "Paste a Drive folder link if you are not uploading files here."}
+          </p>
         </div>
 
         <div className="glass rounded-2xl p-6">
@@ -272,7 +405,7 @@ export function UploadForm() {
 
         <button
           type="submit"
-          disabled={files.length === 0 || uploading}
+          disabled={!canSubmit}
           className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2"
         >
           {uploading ? (

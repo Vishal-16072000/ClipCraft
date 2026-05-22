@@ -7,6 +7,7 @@ create table if not exists public.orders (
   title text not null,
   status text not null default 'received'
     check (status in ('received', 'editing', 'review', 'done')),
+  footage_url text,
   reference_url text,
   style_notes text,
   created_at timestamptz not null default now(),
@@ -85,6 +86,16 @@ create policy "Users insert own order files"
     )
   );
 
+drop policy if exists "Users delete own order files" on public.order_files;
+create policy "Users delete own order files"
+  on public.order_files for delete
+  using (
+    exists (
+      select 1 from public.orders o
+      where o.id = order_files.order_id and o.user_id = auth.uid()
+    )
+  );
+
 -- Storage bucket for raw footage
 insert into storage.buckets (id, name, public)
 values ('uploads', 'uploads', false)
@@ -102,6 +113,15 @@ create policy "Users upload own footage"
 drop policy if exists "Users read own footage" on storage.objects;
 create policy "Users read own footage"
   on storage.objects for select
+  to authenticated
+  using (
+    bucket_id = 'uploads'
+    and (storage.foldername (name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "Users delete own footage" on storage.objects;
+create policy "Users delete own footage"
+  on storage.objects for delete
   to authenticated
   using (
     bucket_id = 'uploads'

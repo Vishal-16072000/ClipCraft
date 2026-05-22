@@ -15,7 +15,7 @@ const filters: Array<{ id: "all" | OrderStatus; label: string }> = [
 ];
 
 export function DashboardOrdersPage() {
-  const { orders, loading, error } = useOrders();
+  const { orders, loading, error, refresh } = useOrders();
   const [filter, setFilter] = useState<"all" | OrderStatus>("all");
 
   const filtered =
@@ -101,7 +101,7 @@ export function DashboardOrdersPage() {
         ) : (
           <div className="space-y-6">
             {filtered.map((order) => (
-              <OrderCard key={order.id} order={order} />
+              <OrderCard key={order.id} order={order} onChanged={refresh} />
             ))}
           </div>
         )}
