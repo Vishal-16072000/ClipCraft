@@ -13,12 +13,14 @@ import { isSupabaseConfigured, supabase } from "../lib/supabase";
 type AuthContextValue = {
   user: User | null;
   session: Session | null;
+  role: "user" | "admin" | null;
   loading: boolean;
   configured: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signUpWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
+  refreshRole: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -37,6 +39,7 @@ function formatAuthError(message: string) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [role, setRole] = useState<"user" | "admin" | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,22 +48,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    async function loadProfileRole(nextUser: User | null) {
+      if (!supabase || !nextUser) {
+        setRole(null);
+        return;
+      }
+
+      const { data: isAdmin } = await supabase.rpc("is_admin");
+
+      if (isAdmin === true) {
+        setRole("admin");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", nextUser.id)
+        .maybeSingle();
+
+      if (error) {
+        setRole(null);
+        return;
+      }
+
+      setRole(data?.role === "admin" ? "admin" : "user");
+    }
+
     supabase.auth.getSession().then(({ data }) => {
+      const nextUser = data.session?.user ?? null;
       setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
+      setUser(nextUser);
+      loadProfileRole(nextUser).finally(() => setLoading(false));
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      const nextUser = nextSession?.user ?? null;
+      setLoading(true);
       setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-      setLoading(false);
+      setUser(nextUser);
+      loadProfileRole(nextUser).finally(() => setLoading(false));
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const refreshRole = useCallback(async () => {
+    if (!supabase || !user) {
+      setRole(null);
+      return;
+    }
+
+    const { data: isAdmin } = await supabase.rpc("is_admin");
+
+    if (isAdmin === true) {
+      setRole("admin");
+      return;
+    }
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    setRole(data?.role === "admin" ? "admin" : "user");
+  }, [user]);
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     if (!supabase) {
@@ -108,22 +163,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       session,
+      role,
       loading,
       configured: isSupabaseConfigured,
       signInWithEmail,
       signUpWithEmail,
       signInWithGoogle,
       resetPassword,
+      refreshRole,
       signOut,
     }),
     [
       user,
       session,
+      role,
       loading,
       signInWithEmail,
       signUpWithEmail,
       signInWithGoogle,
       resetPassword,
+      refreshRole,
       signOut,
     ],
   );

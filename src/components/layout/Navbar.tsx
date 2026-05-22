@@ -12,7 +12,7 @@ const navLinks = [
 ];
 
 export function Navbar() {
-  const { user, loading, signOut } = useAuth();
+  const { user, role, loading, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -70,10 +70,10 @@ export function Navbar() {
             )}
             {!loading && user && (
               <Link
-                to="/dashboard"
+                to={role === "admin" ? "/admin" : "/dashboard"}
                 className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2"
               >
-                {navbarCopy.dashboard}
+                {role === "admin" ? "Admin" : navbarCopy.dashboard}
               </Link>
             )}
             {!loading && !user && (
@@ -136,11 +136,11 @@ export function Navbar() {
             {!loading && user && (
               <>
                 <Link
-                  to="/dashboard"
+                  to={role === "admin" ? "/admin" : "/dashboard"}
                   className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
                   onClick={() => setOpen(false)}
                 >
-                  {navbarCopy.dashboard}
+                  {role === "admin" ? "Admin" : navbarCopy.dashboard}
                 </Link>
                 <div className="px-4 py-3 text-sm text-gray-400 flex items-center justify-between">
                   <span className="truncate">{displayName}</span>

@@ -42,7 +42,7 @@ type OrderRow = {
   }> | null;
 };
 
-const ORDER_SELECT_WITH_FOOTAGE = `
+export const ORDER_SELECT_WITH_FOOTAGE = `
   id,
   user_id,
   title,
@@ -81,7 +81,7 @@ function isMissingFootageUrlError(message: string) {
   return message.includes("orders.footage_url") || message.includes("footage_url");
 }
 
-function mapOrder(row: OrderRow): Order {
+export function mapOrder(row: OrderRow): Order {
   return {
     id: row.id,
     userId: row.user_id,

@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   ExternalLink,
+  Shield,
 } from "lucide-react";
 import { siteConfig } from "../../data/content";
 import { dashboardCopy, dashboardNav } from "../../data/dashboard";
@@ -23,7 +24,7 @@ const navIcons = {
 } as const;
 
 export function DashboardLayout() {
-  const { user, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -87,6 +88,15 @@ export function DashboardLayout() {
       </nav>
 
       <div className="mt-auto pt-6 border-t border-white/10 space-y-2">
+        {role === "admin" && (
+          <Link
+            to="/admin"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-emerald-300 hover:text-white hover:bg-emerald-500/10 transition-colors"
+          >
+            <Shield className="h-4 w-4" />
+            Admin console
+          </Link>
+        )}
         <Link
           to="/"
           className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors"

@@ -1,10 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { AdminRoute } from "./components/auth/AdminRoute";
+import { AdminLayout } from "./components/admin/AdminLayout";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import { HomePage } from "./pages/HomePage";
 import { UploadPage } from "./pages/UploadPage";
 import { SignInPage } from "./pages/SignInPage";
+import { AdminOverviewPage } from "./pages/admin/AdminOverviewPage";
+import { AdminOrdersPage } from "./pages/admin/AdminOrdersPage";
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
+import { AdminSettingsPage } from "./pages/admin/AdminSettingsPage";
 import { DashboardOverviewPage } from "./pages/dashboard/DashboardOverviewPage";
 import { DashboardUploadPage } from "./pages/dashboard/DashboardUploadPage";
 import { DashboardOrdersPage } from "./pages/dashboard/DashboardOrdersPage";
@@ -30,6 +36,19 @@ export default function App() {
             <Route path="upload" element={<DashboardUploadPage />} />
             <Route path="orders" element={<DashboardOrdersPage />} />
             <Route path="settings" element={<DashboardSettingsPage />} />
+          </Route>
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminOverviewPage />} />
+            <Route path="orders" element={<AdminOrdersPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
