@@ -14,11 +14,39 @@ export type AdminProfile = {
   createdAt: string;
 };
 
+export type EditorAssignedClient = {
+  id: string;
+  email: string;
+  assignedAt: string;
+};
+
+export type AdminEditor = {
+  id: string;
+  email: string;
+  passwordSet: boolean;
+  assignedClients: EditorAssignedClient[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 type ProfileRow = {
   id: string;
   email: string;
   role: "user" | "admin";
   created_at: string;
+};
+
+type AdminEditorRpcRow = {
+  id: string;
+  email: string;
+  password_set: boolean;
+  assigned_clients: Array<{
+    id: string;
+    email: string;
+    assigned_at: string;
+  }> | null;
+  created_at: string;
+  updated_at: string;
 };
 
 type AdminOrderRpcRow = {
@@ -50,6 +78,21 @@ function mapProfile(row: ProfileRow): AdminProfile {
     email: row.email,
     role: row.role,
     createdAt: row.created_at,
+  };
+}
+
+function mapAdminEditorRpc(row: AdminEditorRpcRow): AdminEditor {
+  return {
+    id: row.id,
+    email: row.email,
+    passwordSet: row.password_set,
+    assignedClients: (row.assigned_clients ?? []).map((client) => ({
+      id: client.id,
+      email: client.email,
+      assignedAt: client.assigned_at,
+    })),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -98,6 +141,74 @@ export async function fetchAdminProfiles(): Promise<{
   }
 
   return { profiles: (data as ProfileRow[]).map(mapProfile), error: null };
+}
+
+export async function fetchAdminEditors(): Promise<{
+  editors: AdminEditor[];
+  error: string | null;
+}> {
+  if (!supabase) {
+    return { editors: [], error: "Supabase is not configured." };
+  }
+
+  const { data, error } = await supabase.rpc("admin_list_editors");
+
+  if (error) {
+    return { editors: [], error: error.message };
+  }
+
+  return {
+    editors: (data as AdminEditorRpcRow[]).map(mapAdminEditorRpc),
+    error: null,
+  };
+}
+
+export async function createAdminEditor(
+  email: string,
+  password: string,
+): Promise<{ id: string | null; error: string | null }> {
+  if (!supabase) {
+    return { id: null, error: "Supabase is not configured." };
+  }
+
+  const { data, error } = await supabase.rpc("admin_create_editor", {
+    editor_email: email,
+    editor_password: password,
+  });
+
+  return { id: (data as string | null) ?? null, error: error?.message ?? null };
+}
+
+export async function assignEditorClient(
+  editorId: string,
+  userId: string,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const { error } = await supabase.rpc("admin_assign_editor_client", {
+    target_editor_id: editorId,
+    target_user_id: userId,
+  });
+
+  return { error: error?.message ?? null };
+}
+
+export async function removeEditorClient(
+  editorId: string,
+  userId: string,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const { error } = await supabase.rpc("admin_remove_editor_client", {
+    target_editor_id: editorId,
+    target_user_id: userId,
+  });
+
+  return { error: error?.message ?? null };
 }
 
 export async function fetchAdminOrders(): Promise<{

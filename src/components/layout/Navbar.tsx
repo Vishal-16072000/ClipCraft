@@ -27,6 +27,10 @@ export function Navbar() {
     user?.user_metadata?.full_name ??
     user?.email?.split("@")[0] ??
     "Account";
+  const accountHref =
+    role === "admin" ? "/admin" : role === "editor" ? "/editor" : "/dashboard";
+  const accountLabel =
+    role === "admin" ? "Admin" : role === "editor" ? "Editor" : navbarCopy.dashboard;
 
   return (
     <header className="fixed top-0 inset-x-0 z-50">
@@ -70,10 +74,10 @@ export function Navbar() {
             )}
             {!loading && user && (
               <Link
-                to={role === "admin" ? "/admin" : "/dashboard"}
+                to={accountHref}
                 className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2"
               >
-                {role === "admin" ? "Admin" : navbarCopy.dashboard}
+                {accountLabel}
               </Link>
             )}
             {!loading && !user && (
@@ -136,11 +140,11 @@ export function Navbar() {
             {!loading && user && (
               <>
                 <Link
-                  to={role === "admin" ? "/admin" : "/dashboard"}
+                  to={accountHref}
                   className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
                   onClick={() => setOpen(false)}
                 >
-                  {role === "admin" ? "Admin" : navbarCopy.dashboard}
+                  {accountLabel}
                 </Link>
                 <div className="px-4 py-3 text-sm text-gray-400 flex items-center justify-between">
                   <span className="truncate">{displayName}</span>

@@ -31,6 +31,7 @@ export function SignInPage() {
     signUpWithEmail,
     signInWithGoogle,
     resetPassword,
+    role,
   } = useAuth();
 
   const [mode, setMode] = useState<AuthMode>("signin");
@@ -42,9 +43,9 @@ export function SignInPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate(redirectTo, { replace: true });
+      navigate(role === "editor" ? "/editor" : redirectTo, { replace: true });
     }
-  }, [authLoading, user, navigate, redirectTo]);
+  }, [authLoading, role, user, navigate, redirectTo]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -81,11 +82,11 @@ export function SignInPage() {
         return;
       }
 
-      const { error: err } = await signInWithEmail(email, password);
+      const { error: err, role: signedInRole } = await signInWithEmail(email, password);
       if (err) {
         setError(err);
       } else {
-        navigate(redirectTo, { replace: true });
+        navigate(signedInRole === "editor" ? "/editor" : redirectTo, { replace: true });
       }
     } finally {
       setSubmitting(false);

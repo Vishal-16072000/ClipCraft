@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -16,6 +16,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/signin" state={{ from: location.pathname }} replace />;
+  }
+
+  if (role === "editor") {
+    return <Navigate to="/editor" replace />;
   }
 
   return children;

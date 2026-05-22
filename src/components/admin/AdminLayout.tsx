@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Scissors,
   Play,
   Settings,
   Shield,
@@ -20,6 +21,7 @@ const navIcons = {
   layout: LayoutDashboard,
   folder: FolderOpen,
   users: Users,
+  editors: Scissors,
   settings: Settings,
 } as const;
 
@@ -93,6 +95,13 @@ export function AdminLayout() {
       </nav>
 
       <div className="mt-auto space-y-2 border-t border-white/10 pt-6">
+        <Link
+          to="/editor"
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          <Scissors className="h-4 w-4" />
+          Editor Space
+        </Link>
         <Link
           to="/dashboard"
           className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-white"

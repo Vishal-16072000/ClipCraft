@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AdminRoute } from "./components/auth/AdminRoute";
+import { EditorRoute } from "./components/auth/EditorRoute";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import { HomePage } from "./pages/HomePage";
@@ -10,7 +11,9 @@ import { SignInPage } from "./pages/SignInPage";
 import { AdminOverviewPage } from "./pages/admin/AdminOverviewPage";
 import { AdminOrdersPage } from "./pages/admin/AdminOrdersPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
+import { AdminEditorsPage } from "./pages/admin/AdminEditorsPage";
 import { AdminSettingsPage } from "./pages/admin/AdminSettingsPage";
+import { EditorSpacePage } from "./pages/editor/EditorSpacePage";
 import { DashboardOverviewPage } from "./pages/dashboard/DashboardOverviewPage";
 import { DashboardUploadPage } from "./pages/dashboard/DashboardUploadPage";
 import { DashboardOrdersPage } from "./pages/dashboard/DashboardOrdersPage";
@@ -48,8 +51,17 @@ export default function App() {
             <Route index element={<AdminOverviewPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
             <Route path="users" element={<AdminUsersPage />} />
+            <Route path="editors" element={<AdminEditorsPage />} />
             <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
+          <Route
+            path="/editor"
+            element={
+              <EditorRoute>
+                <EditorSpacePage />
+              </EditorRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
