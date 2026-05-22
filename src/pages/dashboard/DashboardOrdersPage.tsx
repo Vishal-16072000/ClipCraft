@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { Upload, Filter } from "lucide-react";
+import { Upload, Filter, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import { getOrdersForUser, ORDER_STATUS_LABELS, type OrderStatus } from "../../lib/orders";
+import { ORDER_STATUS_LABELS, type OrderStatus } from "../../lib/orders";
+import { useOrders } from "../../hooks/useOrders";
 import { dashboardCopy } from "../../data/dashboard";
 import { OrderCard } from "../../components/dashboard/OrderCard";
 
@@ -15,10 +15,8 @@ const filters: Array<{ id: "all" | OrderStatus; label: string }> = [
 ];
 
 export function DashboardOrdersPage() {
-  const { user } = useAuth();
+  const { orders, loading, error } = useOrders();
   const [filter, setFilter] = useState<"all" | OrderStatus>("all");
-
-  const orders = user ? getOrdersForUser(user.id) : [];
 
   const filtered =
     filter === "all" ? orders : orders.filter((o) => o.status === filter);
@@ -26,6 +24,11 @@ export function DashboardOrdersPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-full">
       <div className="max-w-4xl mx-auto">
+        {error && (
+          <p className="mb-4 text-sm text-red-300 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
+            {error}
+          </p>
+        )}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-white">
@@ -67,7 +70,12 @@ export function DashboardOrdersPage() {
           </div>
         )}
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="glass rounded-3xl p-12 text-center text-gray-400">
+            <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-brand-400" />
+            Loading orders…
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="glass rounded-3xl p-12 text-center">
             <Upload className="h-12 w-12 text-brand-400 mx-auto mb-4 opacity-60" />
             <h2 className="font-display text-xl font-bold text-white">

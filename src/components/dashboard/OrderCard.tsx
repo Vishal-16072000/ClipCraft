@@ -80,7 +80,7 @@ export function OrderCard({
           </p>
           <ul className="mt-2 space-y-1">
             {order.files.slice(0, 3).map((f) => (
-              <li key={f.name} className="text-xs text-gray-400 truncate">
+              <li key={f.id} className="text-xs text-gray-400 truncate">
                 {f.name}
               </li>
             ))}

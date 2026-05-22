@@ -8,13 +8,13 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { getOrdersForUser } from "../../lib/orders";
+import { useOrders } from "../../hooks/useOrders";
 import { dashboardCopy, demoPlanUsage } from "../../data/dashboard";
 import { OrderCard } from "../../components/dashboard/OrderCard";
 
 export function DashboardOverviewPage() {
   const { user } = useAuth();
-  const orders = user ? getOrdersForUser(user.id) : [];
+  const { orders } = useOrders();
 
   const active = orders.filter((o) => o.status !== "done").length;
   const inReview = orders.filter((o) => o.status === "review").length;

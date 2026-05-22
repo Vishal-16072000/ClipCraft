@@ -8,6 +8,8 @@ import {
   X,
   CheckCircle2,
   Clock,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { createOrder } from "../../lib/orders";
@@ -23,6 +25,9 @@ export function UploadForm() {
   const [title, setTitle] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ done: 0, total: 0 });
+  const [error, setError] = useState<string | null>(null);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -50,16 +55,32 @@ export function UploadForm() {
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || files.length === 0) return;
+    if (!user || files.length === 0 || uploading) return;
 
-    createOrder(user.id, {
-      title,
-      files: files.map((f) => ({ name: f.name, size: f.size })),
-      referenceUrl: referenceUrl || undefined,
-      styleNotes: styleNotes || undefined,
-    });
+    setError(null);
+    setUploading(true);
+    setUploadProgress({ done: 0, total: files.length });
+
+    const { error: createError } = await createOrder(
+      user.id,
+      {
+        title,
+        referenceUrl: referenceUrl || undefined,
+        styleNotes: styleNotes || undefined,
+      },
+      files,
+      (done, total) => setUploadProgress({ done, total }),
+    );
+
+    setUploading(false);
+
+    if (createError) {
+      setError(createError);
+      return;
+    }
+
     setSubmitted(true);
   }
 
@@ -69,6 +90,8 @@ export function UploadForm() {
     setTitle("");
     setReferenceUrl("");
     setStyleNotes("");
+    setError(null);
+    setUploadProgress({ done: 0, total: 0 });
   }
 
   if (submitted) {
@@ -79,7 +102,7 @@ export function UploadForm() {
           Order submitted
         </h2>
         <p className="mt-3 text-gray-400 max-w-md mx-auto">
-          Your editor has been notified. Track progress from your dashboard.
+          Your footage is saved in Supabase. Track progress from your dashboard.
         </p>
         <div className="mt-8 flex justify-center">
           <PipelineProgress status="received" />
@@ -121,6 +144,13 @@ export function UploadForm() {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <p>{error}</p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="glass rounded-2xl p-6">
           <label htmlFor="title" className="block text-sm font-medium text-white mb-2">
@@ -130,10 +160,11 @@ export function UploadForm() {
             id="title"
             type="text"
             required
+            disabled={uploading}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Week 12 Reel — Fitness Tips"
-            className="w-full rounded-xl bg-surface-700/50 border border-white/10 px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+            className="w-full rounded-xl bg-surface-700/50 border border-white/10 px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 disabled:opacity-50"
           />
         </div>
 
@@ -160,6 +191,7 @@ export function UploadForm() {
                 type="file"
                 accept="video/*"
                 multiple
+                disabled={uploading}
                 className="hidden"
                 onChange={handleFileSelect}
               />
@@ -180,8 +212,9 @@ export function UploadForm() {
                   </div>
                   <button
                     type="button"
+                    disabled={uploading}
                     onClick={() => removeFile(i)}
-                    className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                    className="p-1 text-gray-500 hover:text-red-400 transition-colors disabled:opacity-40"
                     aria-label="Remove file"
                   >
                     <X className="h-4 w-4" />
@@ -203,10 +236,11 @@ export function UploadForm() {
           <input
             id="reference"
             type="url"
+            disabled={uploading}
             value={referenceUrl}
             onChange={(e) => setReferenceUrl(e.target.value)}
             placeholder="https://instagram.com/reel/..."
-            className="w-full rounded-xl bg-surface-700/50 border border-white/10 px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+            className="w-full rounded-xl bg-surface-700/50 border border-white/10 px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 disabled:opacity-50"
           />
         </div>
 
@@ -221,19 +255,34 @@ export function UploadForm() {
           <textarea
             id="notes"
             rows={4}
+            disabled={uploading}
             value={styleNotes}
             onChange={(e) => setStyleNotes(e.target.value)}
             placeholder="Describe your preferred style: fast cuts, cinematic, trending audio, brand colors, pace, etc."
-            className="w-full rounded-xl bg-surface-700/50 border border-white/10 px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 resize-none"
+            className="w-full rounded-xl bg-surface-700/50 border border-white/10 px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 resize-none disabled:opacity-50"
           />
         </div>
 
+        {uploading && uploadProgress.total > 0 && (
+          <p className="text-center text-sm text-brand-300">
+            Uploading {uploadProgress.done} of {uploadProgress.total} file
+            {uploadProgress.total !== 1 ? "s" : ""} to Supabase…
+          </p>
+        )}
+
         <button
           type="submit"
-          disabled={files.length === 0}
-          className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-brand-600/25"
+          disabled={files.length === 0 || uploading}
+          className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2"
         >
-          Submit for editing
+          {uploading ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Uploading…
+            </>
+          ) : (
+            "Submit for editing"
+          )}
         </button>
       </form>
     </div>
