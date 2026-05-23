@@ -6,8 +6,8 @@ export function PipelineProgress({ status }: { status: OrderStatus }) {
   return (
     <div className="flex items-center gap-1 sm:gap-2">
       {ORDER_STATUS_ORDER.map((stage, i) => {
-        const isComplete = i < currentIndex;
-        const isCurrent = i === currentIndex;
+        const isComplete = i < currentIndex || (status === "done" && i === currentIndex);
+        const isCurrent = i === currentIndex && !isComplete;
         return (
           <div key={stage} className="flex items-center gap-1 sm:gap-2">
             <div className="flex flex-col items-center">
