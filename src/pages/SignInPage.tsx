@@ -157,11 +157,12 @@ export function SignInPage() {
               <Info className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-gray-400">
                 <span className="text-white font-medium">Setup required:</span>{" "}
-                Create a <code className="text-brand-300">.env</code> file (not{" "}
-                <code className="text-brand-300">.env.example</code>) with{" "}
+                Add{" "}
                 <code className="text-brand-300">VITE_SUPABASE_URL</code> and{" "}
-                <code className="text-brand-300">VITE_SUPABASE_ANON_KEY</code>, then
-                restart the dev server.
+                <code className="text-brand-300">VITE_SUPABASE_PUBLISHABLE_KEY</code>{" "}
+                in your environment variables. For local development use a{" "}
+                <code className="text-brand-300">.env</code> file; for deployment add
+                them in your hosting provider and redeploy.
               </p>
             </div>
           )}

@@ -1,4 +1,4 @@
-import { ArrowRight, Play, Star } from "lucide-react";
+import { ArrowRight, Play, Sparkles, Star, TrendingUp, UploadCloud, Wand2 } from "lucide-react";
 import { heroContent, heroMicrocopy, audienceTags } from "../../data/content";
 
 export function Hero() {
@@ -20,9 +20,9 @@ export function Hero() {
               </span>
             </div>
 
-            <h1 className="font-display text-[2.5rem] sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-extrabold text-white leading-[1.05] tracking-tight">
+            <h1 className="font-display text-[2.5rem] sm:text-5xl lg:text-6xl xl:text-[4rem] font-extrabold text-white leading-[1.05] tracking-tight">
               {heroContent.headline}{" "}
-              <span className="text-gradient-accent block sm:inline">
+              <span className="text-gradient-accent block sm:inline ">
                 {heroContent.headlineAccent}
               </span>
             </h1>
@@ -93,32 +93,97 @@ export function Hero() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  {heroMicrocopy.reels.map((reel) => (
-                    <div
-                      key={reel.label}
-                      className="relative aspect-[9/16] rounded-xl overflow-hidden group"
-                    >
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-br ${reel.gradient}`}
-                      />
-                      <div className="absolute inset-0 reel-scanline opacity-60" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
-                          <Play className="h-3.5 w-3.5 fill-white text-white ml-0.5" />
+                <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
+                    <div className="rounded-2xl border border-white/10 bg-surface-900/70 p-4">
+                      <div className="mb-4 flex items-center gap-2">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-gray-300">
+                          <UploadCloud className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wide text-gray-500">
+                            Raw footage
+                          </p>
+                          <p className="text-sm font-semibold text-white">12 clips uploaded</p>
                         </div>
                       </div>
-                      <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                        <p className="text-[9px] text-white/80 font-medium truncate">
-                          {reel.label}
-                        </p>
+                      <div className="space-y-2">
+                        {[72, 54, 86].map((width, index) => (
+                          <div key={width} className="rounded-xl bg-white/[0.04] p-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="h-8 w-5 rounded-md bg-surface-700" />
+                              <div className="min-w-0 flex-1">
+                                <div
+                                  className="h-2 rounded-full bg-gray-500/50"
+                                  style={{ width: `${width}%` }}
+                                />
+                                <div className="mt-1 h-1.5 w-1/2 rounded-full bg-gray-700" />
+                              </div>
+                              <span className="text-[10px] text-gray-600">0{index + 1}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div
-                        className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"
-                        style={{ animationDelay: reel.delay }}
-                      />
                     </div>
-                  ))}
+
+                    <div className="flex items-center justify-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-400/30 bg-brand-600/20 text-brand-200 shadow-[0_0_40px_-10px_rgba(124,58,237,0.8)]">
+                        <Wand2 className="h-5 w-5" />
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4">
+                      <div className="mb-4 flex items-center gap-2">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-400/15 text-emerald-300">
+                          <Sparkles className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wide text-emerald-200/70">
+                            Viral-ready output
+                          </p>
+                          <p className="text-sm font-semibold text-white">Final edit ready</p>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                        <div className="flex items-end gap-1.5">
+                          {[38, 62, 45, 88, 72, 96].map((height) => (
+                            <span
+                              key={height}
+                              className="w-full rounded-t bg-gradient-to-t from-emerald-500 to-brand-300"
+                              style={{ height: `${height}px` }}
+                            />
+                          ))}
+                        </div>
+                        <div className="mt-3 flex items-center justify-between text-[10px]">
+                          <span className="text-gray-500">Hook score</span>
+                          <span className="font-bold text-emerald-300">94%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-surface-900/60 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-[10px] uppercase tracking-wide text-gray-500">
+                        ClipCraft editing layer
+                      </p>
+                      <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-300">
+                        <TrendingUp className="h-3 w-3" />
+                        Retention-first
+                      </span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {["Hook rewrite", "Pacing cut", "Captions + sound"].map((step) => (
+                        <div
+                          key={step}
+                          className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-gray-300"
+                        >
+                          <span className="mr-2 text-emerald-300">✓</span>
+                          {step}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-4 glass rounded-xl p-3 flex items-center gap-3">

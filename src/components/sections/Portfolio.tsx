@@ -1,20 +1,14 @@
-import { useState } from "react";
-import { Play, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import {
   portfolioCategories,
   portfolioItems,
   portfolioSection,
-  type PortfolioCategory,
 } from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
 
 export function Portfolio() {
-  const [active, setActive] = useState<PortfolioCategory>("All");
-
-  const filtered =
-    active === "All"
-      ? portfolioItems
-      : portfolioItems.filter((item) => item.category === active);
+  const marqueeBase = Array.from({ length: 4 }, () => portfolioItems).flat();
+  const marqueeItems = [...marqueeBase, ...marqueeBase];
 
   return (
     <section id="portfolio" className="section-padding relative overflow-hidden">
@@ -29,38 +23,47 @@ export function Portfolio() {
 
         <div className="mt-10 flex flex-wrap justify-center gap-2">
           {portfolioCategories.map((cat) => (
-            <button
+            <span
               key={cat}
-              type="button"
-              onClick={() => setActive(cat)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                active === cat
-                  ? "bg-white text-surface-900 shadow-lg"
-                  : "glass text-gray-400 hover:text-white hover:bg-white/[0.08]"
-              }`}
+              className="glass rounded-full px-4 py-2 text-sm font-medium text-gray-400"
             >
               {cat}
-            </button>
+            </span>
           ))}
         </div>
 
-        <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((item) => (
-            <article
-              key={item.id}
-              className="group relative aspect-[9/14] rounded-2xl overflow-hidden glass border border-white/10 hover:border-white/20 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_24px_48px_-12px_rgba(124,58,237,0.25)]"
-            >
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${item.gradient} transition-transform duration-700 group-hover:scale-105`}
-              />
-              <div className="absolute inset-0 reel-scanline opacity-40 group-hover:opacity-70 transition-opacity" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+        <div className="group relative mt-12 overflow-hidden">
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-surface-950 to-transparent sm:w-28" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-surface-950 to-transparent sm:w-28" />
+          <div
+            className="flex w-max gap-5 animate-marquee group-hover:[animation-play-state:paused]"
+            style={{ animationDuration: "90s" }}
+          >
+          {marqueeItems.map((item, index) => {
+            const videoUrl = (item as { videoUrl?: string }).videoUrl;
 
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="h-14 w-14 rounded-full bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center scale-90 group-hover:scale-100 transition-transform">
-                  <Play className="h-6 w-6 fill-white text-white ml-1" />
-                </div>
-              </div>
+            return (
+            <article
+              key={`${item.id}-${index}`}
+              className="group/card relative aspect-[9/14] w-[min(72vw,18rem)] shrink-0 rounded-2xl overflow-hidden glass border border-white/10 hover:border-white/20 transition-all duration-1000 hover:-translate-y-2 hover:shadow-[0_24px_48px_-12px_rgba(124,58,237,0.25)] sm:w-72 lg:w-80"
+            >
+              {videoUrl ? (
+                <video
+                  src={videoUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105"
+                />
+              ) : (
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${item.gradient} transition-transform duration-700 group-hover/card:scale-105`}
+                />
+              )}
+              <div className="absolute inset-0 reel-scanline opacity-40 group-hover/card:opacity-70 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
 
               <div className="absolute top-4 left-4">
                 <span
@@ -83,11 +86,13 @@ export function Portfolio() {
               </div>
 
               <div
-                className="absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover/card:opacity-100 transition-opacity"
                 style={{ background: `linear-gradient(90deg, transparent, ${item.accent}, transparent)` }}
               />
             </article>
-          ))}
+            );
+          })}
+          </div>
         </div>
       </div>
     </section>
