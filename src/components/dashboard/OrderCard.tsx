@@ -14,6 +14,8 @@ import {
   addOrderFiles,
   deleteOrderFile,
   getSignedFileUrl,
+  reviewEditedVideo,
+  type EditedVideo,
   type Order,
   type OrderFile,
 } from "../../lib/orders";
@@ -122,6 +124,112 @@ function UploadedVideoPlayer({
         </button>
       </div>
     </li>
+  );
+}
+
+function EditedVideoReview({
+  video,
+  onReviewed,
+}: {
+  video: EditedVideo;
+  onReviewed?: () => void | Promise<void>;
+}) {
+  const [preview, setPreview] = useState<{
+    storagePath: string;
+    signedUrl: string | null;
+  } | null>(null);
+  const [comment, setComment] = useState(video.clientComment ?? "");
+  const [reviewing, setReviewing] = useState<"satisfied" | "changes_requested" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const loading = preview?.storagePath !== video.storagePath;
+  const signedUrl = loading ? null : preview.signedUrl;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getSignedFileUrl(video.storagePath).then((url) => {
+      if (cancelled) return;
+      setPreview({ storagePath: video.storagePath, signedUrl: url });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [video.storagePath]);
+
+  async function handleReview(nextStatus: "satisfied" | "changes_requested") {
+    setError(null);
+    setReviewing(nextStatus);
+    const result = await reviewEditedVideo(video.id, nextStatus, comment.trim());
+    setReviewing(null);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    await onReviewed?.();
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-surface-700/50">
+      <div className="relative aspect-video bg-black">
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : signedUrl ? (
+          <video src={signedUrl} controls preload="metadata" className="h-full w-full object-contain">
+            Your browser does not support video playback.
+          </video>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-gray-500">
+            <PlayCircle className="h-7 w-7 text-gray-600" />
+            Preview unavailable
+          </div>
+        )}
+      </div>
+      <div className="space-y-3 px-4 py-3">
+        <div>
+          <p className="truncate text-sm font-medium text-white">{video.name}</p>
+          <p className="text-xs text-gray-500">
+            {formatSize(video.size)} · {video.reviewStatus.replace("_", " ")}
+          </p>
+        </div>
+        <textarea
+          value={comment}
+          onChange={(event) => setComment(event.target.value)}
+          rows={3}
+          placeholder="Add a comment for your editor"
+          className="w-full resize-none rounded-xl border border-white/10 bg-surface-800 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand-400"
+        />
+        {error && (
+          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+            {error}
+          </p>
+        )}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => handleReview("satisfied")}
+            disabled={reviewing !== null}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/25 disabled:opacity-50"
+          >
+            {reviewing === "satisfied" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Satisfied
+          </button>
+          <button
+            type="button"
+            onClick={() => handleReview("changes_requested")}
+            disabled={reviewing !== null}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-200 transition-colors hover:bg-amber-500/25 disabled:opacity-50"
+          >
+            {reviewing === "changes_requested" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Request changes
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -284,6 +392,18 @@ export function OrderCard({
             </ul>
           )}
         </div>
+        {order.editedVideos.length > 0 && (
+          <div>
+            <p className="mb-3 text-gray-500 text-xs uppercase tracking-wide">
+              Edited video for review
+            </p>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {order.editedVideos.map((video) => (
+                <EditedVideoReview key={video.id} video={video} onReviewed={onChanged} />
+              ))}
+            </div>
+          </div>
+        )}
         {(order.referenceUrl || order.styleNotes) && (
           <div className="grid gap-4 sm:grid-cols-2">
             {order.referenceUrl && (

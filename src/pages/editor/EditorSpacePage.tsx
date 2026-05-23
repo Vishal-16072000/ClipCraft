@@ -1,14 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   CalendarDays,
   CheckCircle2,
+  Download,
   ExternalLink,
   FileVideo,
   FolderOpen,
   LayoutDashboard,
   Loader2,
   LogOut,
+  PlayCircle,
   RefreshCw,
   Scissors,
   Users,
@@ -23,11 +25,15 @@ import { updateAdminOrderStatus } from "../../lib/admin";
 import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_ORDER,
+  getSignedFileUrl,
+  type EditedVideo,
+  type OrderFile,
   type OrderStatus,
 } from "../../lib/orders";
 import type { EditorOrder } from "../../lib/editor";
 
 type Filter = "all" | "active" | OrderStatus;
+type EditorSection = "overview" | "clients" | "orders";
 
 const filters: Array<{ id: Filter; label: string }> = [
   { id: "all", label: "All" },
@@ -52,6 +58,12 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
+function getReviewStatusLabel(status: EditedVideo["reviewStatus"]) {
+  if (status === "satisfied") return "Satisfied";
+  if (status === "changes_requested") return "Changes requested";
+  return "Pending review";
+}
+
 export function EditorSpacePage() {
   const { editor, role, user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -61,6 +73,8 @@ export function EditorSpacePage() {
   const adminOrdersData = useAdminOrders();
   const adminProfilesData = useAdminProfiles();
   const [filter, setFilter] = useState<Filter>("active");
+  const [activeSection, setActiveSection] = useState<EditorSection>("overview");
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const isAdminView = role === "admin";
@@ -109,10 +123,58 @@ export function EditorSpacePage() {
     : editorWorkspace.refresh;
 
   const filteredOrders = useMemo(() => {
-    if (filter === "all") return orders;
-    if (filter === "active") return orders.filter((order) => order.status !== "done");
-    return orders.filter((order) => order.status === filter);
-  }, [filter, orders]);
+    const scopedOrders = selectedClientId
+      ? orders.filter((order) => order.userId === selectedClientId)
+      : orders;
+
+    if (filter === "all") return scopedOrders;
+    if (filter === "active") return scopedOrders.filter((order) => order.status !== "done");
+    return scopedOrders.filter((order) => order.status === filter);
+  }, [filter, orders, selectedClientId]);
+
+  const clientSummaries = useMemo(
+    () =>
+      clients.map((client) => {
+        const clientOrders = orders.filter((order) => order.userId === client.id);
+        const latestOrder = clientOrders[0];
+        const rawClipCount = clientOrders.reduce(
+          (total, order) => total + order.files.length + (order.footageUrl ? 1 : 0),
+          0,
+        );
+        const editedVideoCount = clientOrders.reduce(
+          (total, order) => total + order.editedVideos.length,
+          0,
+        );
+        const reviewCount = clientOrders.filter((order) => order.status === "review").length;
+        const changeRequests = clientOrders.reduce(
+          (total, order) =>
+            total +
+            order.editedVideos.filter((video) => video.reviewStatus === "changes_requested").length,
+          0,
+        );
+
+        return {
+          ...client,
+          latestOrder,
+          rawClipCount,
+          editedVideoCount,
+          reviewCount,
+          changeRequests,
+        };
+      }),
+    [clients, orders],
+  );
+
+  const selectedClient =
+    clientSummaries.find((client) => client.id === selectedClientId) ?? clientSummaries[0] ?? null;
+  const selectedClientOrders = selectedClient
+    ? orders.filter((order) => order.userId === selectedClient.id)
+    : [];
+
+  useEffect(() => {
+    if (selectedClientId && clients.some((client) => client.id === selectedClientId)) return;
+    setSelectedClientId(clients[0]?.id ?? null);
+  }, [clients, selectedClientId]);
 
   const activeOrders = orders.filter((order) => order.status !== "done").length;
   const reviewOrders = orders.filter((order) => order.status === "review").length;
@@ -136,6 +198,17 @@ export function EditorSpacePage() {
     }
   }
 
+  function getNavItemClass(section: EditorSection) {
+    const base =
+      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors";
+
+    if (activeSection === section) {
+      return `${base} border border-brand-500/30 bg-brand-600/20 text-white`;
+    }
+
+    return `${base} text-gray-400 hover:bg-white/5 hover:text-white`;
+  }
+
   return (
     <div className="flex min-h-screen bg-surface-950 text-gray-300">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-white/10 bg-surface-900/50 p-5 lg:flex">
@@ -156,24 +229,27 @@ export function EditorSpacePage() {
         <nav className="flex-1 space-y-1">
           <a
             href="#overview"
-            className="flex items-center gap-3 rounded-xl border border-brand-500/30 bg-brand-600/20 px-3 py-2.5 text-sm font-medium text-white"
+            onClick={() => setActiveSection("overview")}
+            className={getNavItemClass("overview")}
           >
             <LayoutDashboard className="h-4 w-4" />
             Overview
           </a>
           <a
-            href="#orders"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
-          >
-            <FolderOpen className="h-4 w-4" />
-            Orders
-          </a>
-          <a
             href="#clients"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
+            onClick={() => setActiveSection("clients")}
+            className={getNavItemClass("clients")}
           >
             <Users className="h-4 w-4" />
             Clients
+          </a>
+          <a
+            href="#orders"
+            onClick={() => setActiveSection("orders")}
+            className={getNavItemClass("orders")}
+          >
+            <FolderOpen className="h-4 w-4" />
+            Workspace
           </a>
         </nav>
 
@@ -249,16 +325,120 @@ export function EditorSpacePage() {
               </div>
             </section>
 
+            <section id="clients" className="mb-8">
+              <div className="mb-4">
+                <h2 className="font-display text-xl font-bold text-white">
+                  {isAdminView ? "Client table" : "Assigned clients"}
+                </h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  Click a row to open that client's footage, edits, and feedback workspace.
+                </p>
+              </div>
+
+              {loading ? (
+                <div className="glass rounded-3xl p-12 text-center text-gray-400">
+                  <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-brand-400" />
+                  Loading clients...
+                </div>
+              ) : clientSummaries.length === 0 ? (
+                <div className="glass rounded-3xl p-12 text-center">
+                  <Users className="mx-auto mb-4 h-12 w-12 text-brand-400 opacity-60" />
+                  <h3 className="font-display text-xl font-bold text-white">No clients assigned</h3>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
+                    Clients will appear here after an admin assigns them to this editor.
+                  </p>
+                </div>
+              ) : (
+                <div className="glass overflow-hidden rounded-2xl">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[1040px] text-left text-sm">
+                      <thead className="bg-white/[0.03] text-xs uppercase tracking-wide text-gray-500">
+                        <tr>
+                          <th className="px-5 py-4 font-medium">Client</th>
+                          <th className="px-5 py-4 font-medium">Status</th>
+                          <th className="px-5 py-4 font-medium">Orders</th>
+                          <th className="px-5 py-4 font-medium">Raw footage</th>
+                          <th className="px-5 py-4 font-medium">In review</th>
+                          <th className="px-5 py-4 font-medium">Edited videos</th>
+                          <th className="px-5 py-4 font-medium">Latest upload</th>
+                          <th className="px-5 py-4 font-medium">Feedback</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {clientSummaries.map((client) => (
+                          <tr
+                            key={client.id}
+                            onClick={() => {
+                              setSelectedClientId(client.id);
+                              setFilter("active");
+                            }}
+                            className={`cursor-pointer border-t border-white/10 transition-colors ${
+                              selectedClient?.id === client.id
+                                ? "bg-brand-500/10"
+                                : "hover:bg-white/[0.04]"
+                            }`}
+                          >
+                            <td className="px-5 py-4">
+                              <p className="font-semibold text-white">{client.email}</p>
+                              <p className="mt-1 font-mono text-xs text-gray-600">{client.id}</p>
+                            </td>
+                            <td className="px-5 py-4">
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                  client.activeOrderCount > 0
+                                    ? "bg-emerald-500/10 text-emerald-300"
+                                    : "bg-white/5 text-gray-500"
+                                }`}
+                              >
+                                {client.activeOrderCount > 0 ? "Active" : "Idle"}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-gray-300">{client.orderCount}</td>
+                            <td className="px-5 py-4 text-gray-300">{client.rawClipCount}</td>
+                            <td className="px-5 py-4 text-gray-300">{client.reviewCount}</td>
+                            <td className="px-5 py-4 text-gray-300">{client.editedVideoCount}</td>
+                            <td className="px-5 py-4 text-gray-400">
+                              {client.latestOrder ? (
+                                <>
+                                  <p className="max-w-[180px] truncate text-gray-200">
+                                    {client.latestOrder.title}
+                                  </p>
+                                  <p className="mt-1 text-xs text-gray-600">
+                                    {formatDate(client.latestOrder.createdAt)}
+                                  </p>
+                                </>
+                              ) : (
+                                "No upload yet"
+                              )}
+                            </td>
+                            <td className="px-5 py-4">
+                              {client.changeRequests > 0 ? (
+                                <span className="inline-flex rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
+                                  {client.changeRequests} change request{client.changeRequests === 1 ? "" : "s"}
+                                </span>
+                              ) : (
+                                <span className="text-gray-600">None</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </section>
+
             <section id="orders" className="mb-8">
               <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="font-display text-xl font-bold text-white">
-                    {isAdminView ? "All orders" : "Assigned orders"}
+                    {selectedClient ? selectedClient.email : "Client workspace"}
                   </h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    {isAdminView
-                      ? "Admin access shows every client order in the editor workflow."
-                      : "Only orders from clients assigned to you are visible here."}
+                    {selectedClient
+                      ? `${selectedClientOrders.length} order${selectedClientOrders.length === 1 ? "" : "s"} for this client. Review raw footage, upload edited videos, and track feedback here.`
+                      : "Select a client above to see their footage and edits."}
                   </p>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
@@ -279,7 +459,11 @@ export function EditorSpacePage() {
                 </div>
               </div>
 
-              {loading ? (
+              {!selectedClient ? (
+                <div className="glass rounded-3xl p-12 text-center text-gray-500">
+                  Select a client to open their workspace.
+                </div>
+              ) : loading ? (
                 <div className="glass rounded-3xl p-12 text-center text-gray-400">
                   <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-brand-400" />
                   Loading editor workspace...
@@ -290,8 +474,8 @@ export function EditorSpacePage() {
                   <h3 className="font-display text-xl font-bold text-white">No orders found</h3>
                   <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
                     {isAdminView
-                      ? "Orders will appear here after clients upload footage."
-                      : "New work appears here after an admin assigns clients to you."}
+                      ? "This client has no orders in the selected filter."
+                      : "This client has no orders in the selected filter."}
                   </p>
                 </div>
               ) : (
@@ -302,61 +486,17 @@ export function EditorSpacePage() {
                       order={order}
                       updating={updatingId === order.id}
                       onStatusChange={handleStatusChange}
+                      onUploadEdit={
+                        isAdminView
+                          ? async () => ({ error: "Sign in as an editor to upload edited videos." })
+                          : editorWorkspace.uploadEdit
+                      }
                     />
                   ))}
                 </div>
               )}
             </section>
 
-            <section id="clients">
-              <div className="mb-4">
-                <h2 className="font-display text-xl font-bold text-white">
-                  {isAdminView ? "All clients" : "Assigned clients"}
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  {isAdminView
-                    ? "Every client account and order volume."
-                    : "Client list and order volume for your queue."}
-                </p>
-              </div>
-              <div className="glass overflow-hidden rounded-2xl">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[720px] text-left text-sm">
-                    <thead className="bg-white/[0.03] text-xs uppercase tracking-wide text-gray-500">
-                      <tr>
-                        <th className="px-5 py-4 font-medium">Client</th>
-                        <th className="px-5 py-4 font-medium">Active orders</th>
-                        <th className="px-5 py-4 font-medium">Total orders</th>
-                        <th className="px-5 py-4 font-medium">Assigned</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {clients.length === 0 ? (
-                        <tr className="border-t border-white/10">
-                          <td colSpan={4} className="px-5 py-8 text-center text-gray-500">
-                            {isAdminView ? "No clients found yet." : "No clients assigned yet."}
-                          </td>
-                        </tr>
-                      ) : (
-                        clients.map((client) => (
-                          <tr key={client.id} className="border-t border-white/10">
-                            <td className="px-5 py-4">
-                              <p className="font-semibold text-white">{client.email}</p>
-                              <p className="font-mono text-xs text-gray-600">{client.id}</p>
-                            </td>
-                            <td className="px-5 py-4 text-gray-300">{client.activeOrderCount}</td>
-                            <td className="px-5 py-4 text-gray-300">{client.orderCount}</td>
-                            <td className="px-5 py-4 text-gray-400">
-                              {formatDate(client.assignedAt)}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </section>
           </div>
         </div>
       </main>
@@ -388,11 +528,33 @@ function EditorOrderCard({
   order,
   updating,
   onStatusChange,
+  onUploadEdit,
 }: {
   order: EditorOrder;
   updating: boolean;
   onStatusChange: (orderId: string, status: OrderStatus) => void;
+  onUploadEdit: (orderId: string, file: File) => Promise<{ error: string | null }>;
 }) {
+  const [uploadingEdit, setUploadingEdit] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const canDeliver = order.editedVideos.some((video) => video.reviewStatus === "satisfied");
+
+  async function handleEditedVideoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || uploadingEdit) return;
+
+    setUploadError(null);
+    setUploadingEdit(true);
+    const result = await onUploadEdit(order.id, file);
+    setUploadingEdit(false);
+
+    if (result.error) {
+      setUploadError(result.error);
+    }
+  }
+
   return (
     <article className="glass rounded-2xl p-5">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
@@ -426,15 +588,24 @@ function EditorOrderCard({
             id={`editor-status-${order.id}`}
             value={order.status}
             disabled={updating}
-            onChange={(event) => onStatusChange(order.id, event.target.value as OrderStatus)}
+            onChange={(event) => {
+              const nextStatus = event.target.value as OrderStatus;
+              if (nextStatus === "done" && !canDeliver) return;
+              onStatusChange(order.id, nextStatus);
+            }}
             className="h-11 rounded-xl border border-white/10 bg-surface-800 px-3 text-sm font-semibold text-white outline-none transition-colors focus:border-brand-400 disabled:opacity-50"
           >
-            {ORDER_STATUS_ORDER.map((status) => (
+            {ORDER_STATUS_ORDER.filter(
+              (status) => status !== "done" || canDeliver || order.status === "done",
+            ).map((status) => (
               <option key={status} value={status}>
                 {ORDER_STATUS_LABELS[status]}
               </option>
             ))}
           </select>
+          {!canDeliver && order.status !== "done" && (
+            <p className="text-xs text-gray-500">Delivered unlocks after client satisfaction.</p>
+          )}
           {updating && (
             <span className="inline-flex items-center gap-2 text-xs text-brand-300">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -447,17 +618,15 @@ function EditorOrderCard({
       {(order.footageUrl || order.referenceUrl || order.styleNotes || order.files.length > 0) && (
         <div className="mt-5 grid gap-3 border-t border-white/10 pt-5 text-sm lg:grid-cols-3">
           {order.files.length > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-surface-800/60 p-4">
-              <p className="mb-3 text-xs uppercase tracking-wide text-gray-500">Files</p>
-              <div className="space-y-2">
+            <div className="rounded-2xl border border-white/10 bg-surface-800/40 p-4 lg:col-span-3">
+              <p className="mb-3 text-xs uppercase tracking-wide text-gray-500">
+                Original clips
+              </p>
+              <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {order.files.map((file) => (
-                  <div key={file.id} className="flex items-center gap-2 text-gray-300">
-                    <FileVideo className="h-4 w-4 shrink-0 text-brand-300" />
-                    <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                    <span className="text-xs text-gray-600">{formatSize(file.size)}</span>
-                  </div>
+                  <EditorVideoClip key={file.id} file={file} />
                 ))}
-              </div>
+              </ul>
             </div>
           )}
 
@@ -471,7 +640,153 @@ function EditorOrderCard({
           )}
         </div>
       )}
+
+      <div className="mt-5 border-t border-white/10 pt-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-gray-500">Edited video</p>
+            <p className="mt-1 text-sm text-gray-400">
+              Upload the final edit for client review. The order moves to In Review.
+            </p>
+          </div>
+          <label
+            className={`inline-flex w-fit items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors ${
+              uploadingEdit
+                ? "cursor-not-allowed bg-white/5 text-gray-500"
+                : "cursor-pointer bg-brand-600/20 text-brand-300 hover:bg-brand-600/30 hover:text-white"
+            }`}
+          >
+            {uploadingEdit ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileVideo className="h-4 w-4" />
+            )}
+            {uploadingEdit ? "Uploading..." : "Upload edited video"}
+            <input
+              type="file"
+              accept="video/*"
+              disabled={uploadingEdit}
+              className="hidden"
+              onChange={handleEditedVideoUpload}
+            />
+          </label>
+        </div>
+        {uploadError && (
+          <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+            {uploadError}
+          </p>
+        )}
+        {order.editedVideos.length > 0 && (
+          <div className="mt-4">
+            <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {order.editedVideos.map((video) => (
+                <EditorVideoClip key={video.id} file={video}>
+                  <div className="mt-2 rounded-2xl border border-white/10 bg-surface-800/60 p-3 text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <ReviewStatusBadge status={video.reviewStatus} />
+                      <span className="text-xs text-gray-500">
+                        Uploaded {formatDate(video.createdAt)}
+                      </span>
+                    </div>
+                    {video.clientComment ? (
+                      <p className="mt-2 whitespace-pre-wrap text-gray-300">
+                        {video.clientComment}
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-xs text-gray-500">
+                        Client feedback has not been added yet.
+                      </p>
+                    )}
+                  </div>
+                </EditorVideoClip>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </article>
+  );
+}
+
+function ReviewStatusBadge({ status }: { status: EditedVideo["reviewStatus"] }) {
+  const tone =
+    status === "satisfied"
+      ? "bg-emerald-500/10 text-emerald-300"
+      : status === "changes_requested"
+        ? "bg-amber-500/10 text-amber-200"
+        : "bg-brand-500/10 text-brand-200";
+
+  return (
+    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}>
+      {getReviewStatusLabel(status)}
+    </span>
+  );
+}
+
+function EditorVideoClip({ file, children }: { file: OrderFile; children?: ReactNode }) {
+  const [preview, setPreview] = useState<{
+    storagePath: string;
+    signedUrl: string | null;
+  } | null>(null);
+  const loading = preview?.storagePath !== file.storagePath;
+  const signedUrl = loading ? null : preview.signedUrl;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getSignedFileUrl(file.storagePath).then((url) => {
+      if (cancelled) return;
+      setPreview({ storagePath: file.storagePath, signedUrl: url });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [file.storagePath]);
+
+  return (
+    <li className="overflow-hidden rounded-2xl border border-white/10 bg-surface-800/60">
+      <div className="relative aspect-video bg-black">
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : signedUrl ? (
+          <video
+            src={signedUrl}
+            controls
+            preload="metadata"
+            className="h-full w-full object-contain"
+          >
+            Your browser does not support video playback.
+          </video>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-gray-500">
+            <PlayCircle className="h-7 w-7 text-gray-600" />
+            Preview unavailable
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-3 px-4 py-3">
+        <FileVideo className="h-5 w-5 shrink-0 text-brand-300" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-white">{file.name}</p>
+          <p className="text-xs text-gray-500">{formatSize(file.size)}</p>
+        </div>
+        {signedUrl && (
+          <a
+            href={signedUrl}
+            download={file.name}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-brand-500/10 hover:text-brand-200"
+            aria-label={`Download ${file.name}`}
+            title="Download original clip"
+          >
+            <Download className="h-4 w-4" />
+          </a>
+        )}
+      </div>
+      {children && <div className="px-4 pb-4">{children}</div>}
+    </li>
   );
 }
 

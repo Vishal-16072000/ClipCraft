@@ -14,6 +14,8 @@ import {
 import { adminCopy } from "../../data/admin";
 import { useAdminEditors, useAdminProfiles } from "../../hooks/useAdminData";
 
+type EditorTab = "credentials" | "assignments";
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", {
     day: "numeric",
@@ -32,17 +34,27 @@ export function AdminEditorsPage() {
     assignClient,
     removeClient,
   } = useAdminEditors();
-  const { profiles } = useAdminProfiles();
+  const {
+    profiles,
+    loading: profilesLoading,
+    error: profilesError,
+    refresh: refreshProfiles,
+  } = useAdminProfiles();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selectedClients, setSelectedClients] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<EditorTab>("credentials");
+  const [selectedEditors, setSelectedEditors] = useState<Record<string, string>>({});
   const [assignmentKey, setAssignmentKey] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const clientProfiles = profiles.filter((profile) => profile.role === "user");
+  const clientProfiles = profiles.filter((profile) => profile.role !== "admin");
+
+  async function handleRefresh() {
+    await Promise.all([refresh(), refreshProfiles()]);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,11 +75,11 @@ export function AdminEditorsPage() {
     setSuccess("Editor added. They can use these credentials for Editor Space.");
   }
 
-  async function handleAssign(editorId: string) {
-    const userId = selectedClients[editorId];
+  async function handleAssignClient(userId: string) {
+    const editorId = selectedEditors[userId];
 
-    if (!userId) {
-      setActionError("Select a client first.");
+    if (!editorId) {
+      setActionError("Select an editor first.");
       return;
     }
 
@@ -82,7 +94,7 @@ export function AdminEditorsPage() {
       return;
     }
 
-    setSelectedClients((current) => ({ ...current, [editorId]: "" }));
+    setSelectedEditors((current) => ({ ...current, [userId]: "" }));
     setSuccess("Client assigned to editor.");
   }
 
@@ -113,7 +125,7 @@ export function AdminEditorsPage() {
           </div>
           <button
             type="button"
-            onClick={refresh}
+            onClick={handleRefresh}
             className="inline-flex w-fit items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/[0.06]"
           >
             <RefreshCw className="h-4 w-4" />
@@ -121,9 +133,9 @@ export function AdminEditorsPage() {
           </button>
         </div>
 
-        {(error || actionError) && (
+        {(error || profilesError || actionError) && (
           <p className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-            {error ?? actionError}
+            {error ?? profilesError ?? actionError}
           </p>
         )}
 
@@ -133,6 +145,33 @@ export function AdminEditorsPage() {
           </p>
         )}
 
+        <div className="mb-6 inline-flex rounded-2xl border border-white/10 bg-white/[0.03] p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("credentials")}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+              activeTab === "credentials"
+                ? "bg-brand-600 text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            Editor credentials
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("assignments")}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+              activeTab === "assignments"
+                ? "bg-brand-600 text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            Assign clients
+          </button>
+        </div>
+
+        {activeTab === "credentials" && (
+          <>
         <section className="glass mb-6 rounded-2xl p-5">
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600/20 text-brand-200">
@@ -219,7 +258,7 @@ export function AdminEditorsPage() {
                     <th className="px-5 py-4 font-medium">Editor</th>
                     <th className="px-5 py-4 font-medium">Password</th>
                     <th className="px-5 py-4 font-medium">Assigned clients</th>
-                    <th className="px-5 py-4 font-medium">Assign client</th>
+                    <th className="px-5 py-4 font-medium">Client count</th>
                     <th className="px-5 py-4 font-medium">Added</th>
                   </tr>
                 </thead>
@@ -278,48 +317,141 @@ export function AdminEditorsPage() {
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex min-w-[260px] gap-2">
-                          <select
-                            value={selectedClients[editor.id] ?? ""}
-                            onChange={(event) =>
-                              setSelectedClients((current) => ({
-                                ...current,
-                                [editor.id]: event.target.value,
-                              }))
-                            }
-                            className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-surface-800 px-3 text-sm text-white outline-none transition-colors focus:border-brand-400"
-                          >
-                            <option value="">Select client</option>
-                            {clientProfiles.map((profile) => (
-                              <option key={profile.id} value={profile.id}>
-                                {profile.email}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => handleAssign(editor.id)}
-                            disabled={
-                              !selectedClients[editor.id] ||
-                              assignmentKey?.startsWith(`${editor.id}:`)
-                            }
-                            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 text-xs font-semibold text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {assignmentKey?.startsWith(`${editor.id}:`) ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <UserPlus className="h-4 w-4" />
-                            )}
-                            Assign
-                          </button>
-                        </div>
-                        <p className="mt-2 font-mono text-xs text-gray-600">{editor.id}</p>
+                        <p className="font-semibold text-white">{editor.assignedClients.length}</p>
+                        <p className="mt-1 font-mono text-xs text-gray-600">{editor.id}</p>
                       </td>
                       <td className="px-5 py-4 text-gray-400">
                         {formatDate(editor.createdAt)}
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+          </>
+        )}
+
+        {activeTab === "assignments" && (
+          <div className="glass overflow-hidden rounded-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px] text-left text-sm">
+                <thead className="bg-white/[0.03] text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-5 py-4 font-medium">Client</th>
+                    <th className="px-5 py-4 font-medium">Current editor</th>
+                    <th className="px-5 py-4 font-medium">Assign editor</th>
+                    <th className="px-5 py-4 font-medium">User ID</th>
+                    <th className="px-5 py-4 font-medium">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {profilesLoading ? (
+                    <tr className="border-t border-white/10">
+                      <td colSpan={5} className="px-5 py-10 text-center text-gray-400">
+                        <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-brand-400" />
+                        Loading clients...
+                      </td>
+                    </tr>
+                  ) : clientProfiles.length === 0 ? (
+                    <tr className="border-t border-white/10">
+                      <td colSpan={5} className="px-5 py-10 text-center text-gray-500">
+                        No client profiles found.
+                      </td>
+                    </tr>
+                  ) : (
+                    clientProfiles.map((profile) => {
+                      const assignedEditors = editors.filter((editor) =>
+                        editor.assignedClients.some((client) => client.id === profile.id),
+                      );
+                      const selectedEditorId = selectedEditors[profile.id] ?? "";
+
+                      return (
+                        <tr key={profile.id} className="border-t border-white/10">
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-600/20 text-brand-200">
+                                <Users className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-white">{profile.email}</p>
+                                <p className="text-xs text-gray-500">Client</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-gray-300">
+                            {assignedEditors.length > 0 ? (
+                              <div className="flex max-w-[280px] flex-wrap gap-1.5">
+                                {assignedEditors.map((editor) => (
+                                  <button
+                                    key={editor.id}
+                                    type="button"
+                                    onClick={() => handleRemove(editor.id, profile.id)}
+                                    disabled={assignmentKey === `${editor.id}:${profile.id}:remove`}
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 text-xs text-gray-300 transition-colors hover:bg-red-500/10 hover:text-red-200 disabled:opacity-50"
+                                    title={`Remove ${editor.email}`}
+                                  >
+                                    {editor.email}
+                                    {assignmentKey === `${editor.id}:${profile.id}:remove` ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <UserMinus className="h-3 w-3" />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">Not assigned</span>
+                            )}
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex min-w-[280px] gap-2">
+                              <select
+                                value={selectedEditorId}
+                                onChange={(event) =>
+                                  setSelectedEditors((current) => ({
+                                    ...current,
+                                    [profile.id]: event.target.value,
+                                  }))
+                                }
+                                className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-surface-800 px-3 text-sm text-white outline-none transition-colors focus:border-brand-400"
+                              >
+                                <option value="">Select editor</option>
+                                {editors.map((editor) => (
+                                  <option key={editor.id} value={editor.id}>
+                                    {editor.email}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => handleAssignClient(profile.id)}
+                                disabled={
+                                  !selectedEditorId ||
+                                  assignmentKey === `${selectedEditorId}:${profile.id}:assign`
+                                }
+                                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 text-xs font-semibold text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {assignmentKey === `${selectedEditorId}:${profile.id}:assign` ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <UserPlus className="h-4 w-4" />
+                                )}
+                                Assign
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 font-mono text-xs text-gray-600">
+                            {profile.id}
+                          </td>
+                          <td className="px-5 py-4 text-gray-400">
+                            {formatDate(profile.createdAt)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

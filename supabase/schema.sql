@@ -90,6 +90,25 @@ as $$
   order by p.created_at desc;
 $$;
 
+create or replace function public.admin_sync_profiles()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Admin access required';
+  end if;
+
+  insert into public.profiles (id, email, role)
+  select id, coalesce(email, ''), 'user'
+  from auth.users
+  on conflict (id) do update
+    set email = excluded.email;
+end;
+$$;
+
 -- Orders
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
@@ -423,6 +442,28 @@ begin
 end;
 $$;
 
+create or replace function public.client_get_assigned_editor()
+returns table (
+  id uuid,
+  email text,
+  assigned_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    e.id,
+    e.email,
+    a.created_at as assigned_at
+  from public.editor_client_assignments a
+  join public.editors e on e.id = a.editor_id
+  where a.user_id = auth.uid()
+  order by a.created_at desc
+  limit 1;
+$$;
+
 create or replace function public.editor_list_clients(editor_token text)
 returns table (
   id uuid,
@@ -615,7 +656,12 @@ create policy "Admins read editor sessions"
 -- Storage bucket for raw footage
 insert into storage.buckets (id, name, public)
 values ('uploads', 'uploads', false)
-on conflict (id) do nothing;
+on conflict (id) do update
+  set file_size_limit = 5368709120;
+
+update storage.buckets
+set file_size_limit = 5368709120
+where id = 'uploads';
 
 drop policy if exists "Users upload own footage" on storage.objects;
 create policy "Users upload own footage"
@@ -638,6 +684,12 @@ create policy "Users read own footage"
     )
   );
 
+drop policy if exists "Editor workspace reads uploaded footage" on storage.objects;
+create policy "Editor workspace reads uploaded footage"
+  on storage.objects for select
+  to anon, authenticated
+  using (bucket_id = 'uploads');
+
 drop policy if exists "Users delete own footage" on storage.objects;
 create policy "Users delete own footage"
   on storage.objects for delete
@@ -648,9 +700,11 @@ create policy "Users delete own footage"
   );
 
 grant execute on function public.admin_list_editors() to authenticated;
+grant execute on function public.admin_sync_profiles() to authenticated;
 grant execute on function public.admin_create_editor(text, text) to authenticated;
 grant execute on function public.admin_assign_editor_client(uuid, uuid) to authenticated;
 grant execute on function public.admin_remove_editor_client(uuid, uuid) to authenticated;
+grant execute on function public.client_get_assigned_editor() to authenticated;
 grant execute on function public.editor_sign_in(text, text) to anon, authenticated;
 grant execute on function public.editor_list_clients(text) to anon, authenticated;
 grant execute on function public.editor_list_orders(text) to anon, authenticated;

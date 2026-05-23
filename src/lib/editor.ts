@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
-import type { OrderFile, OrderStatus } from "./orders";
+import { UPLOADS_BUCKET } from "./orders";
+import type { EditedVideo, OrderFile, OrderStatus } from "./orders";
 
 export type EditorClient = {
   id: string;
@@ -21,6 +22,7 @@ export type EditorOrder = {
   createdAt: string;
   updatedAt: string;
   files: OrderFile[];
+  editedVideos: EditedVideo[];
 };
 
 type EditorClientRow = {
@@ -47,6 +49,17 @@ type EditorOrderRow = {
     name: string;
     size_bytes: number;
     storage_path: string;
+  }> | null;
+  edited_videos: Array<{
+    id: string;
+    name: string;
+    size_bytes: number;
+    storage_path: string;
+    editor_id: string | null;
+    review_status: "pending" | "satisfied" | "changes_requested";
+    client_comment: string | null;
+    created_at: string;
+    reviewed_at: string | null;
   }> | null;
 };
 
@@ -77,6 +90,17 @@ function mapEditorOrder(row: EditorOrderRow): EditorOrder {
       name: file.name,
       size: Number(file.size_bytes),
       storagePath: file.storage_path,
+    })),
+    editedVideos: (row.edited_videos ?? []).map((video) => ({
+      id: video.id,
+      name: video.name,
+      size: Number(video.size_bytes),
+      storagePath: video.storage_path,
+      editorId: video.editor_id ?? undefined,
+      reviewStatus: video.review_status,
+      clientComment: video.client_comment ?? undefined,
+      createdAt: video.created_at,
+      reviewedAt: video.reviewed_at ?? undefined,
     })),
   };
 }
@@ -133,4 +157,46 @@ export async function updateEditorOrderStatus(
   });
 
   return { error: error?.message ?? null };
+}
+
+function sanitizeFileName(name: string) {
+  return name.replace(/[^\w.-]+/g, "_").slice(0, 200);
+}
+
+export async function uploadEditedVideo(
+  accessToken: string,
+  orderId: string,
+  file: File,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const storagePath = `edited/${orderId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+  const { error: uploadError } = await supabase.storage
+    .from(UPLOADS_BUCKET)
+    .upload(storagePath, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+
+  if (uploadError) {
+    return { error: `Upload failed for "${file.name}": ${uploadError.message}` };
+  }
+
+  const { error } = await supabase.rpc("editor_add_edited_video", {
+    editor_token: accessToken,
+    target_order_id: orderId,
+    video_name: file.name,
+    video_size_bytes: file.size,
+    video_storage_path: storagePath,
+  });
+
+  if (error) {
+    await supabase.storage.from(UPLOADS_BUCKET).remove([storagePath]);
+    return { error: error.message };
+  }
+
+  return { error: null };
 }

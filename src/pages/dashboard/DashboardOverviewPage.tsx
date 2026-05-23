@@ -8,13 +8,24 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAssignedEditor } from "../../hooks/useAssignedEditor";
 import { useOrders } from "../../hooks/useOrders";
 import { dashboardCopy, demoPlanUsage } from "../../data/dashboard";
 import { OrderCard } from "../../components/dashboard/OrderCard";
 
+function formatEditorName(email: string) {
+  return email
+    .split("@")[0]
+    .split(/[._\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export function DashboardOverviewPage() {
   const { user } = useAuth();
   const { orders } = useOrders();
+  const { editor, loading: editorLoading, error: editorError } = useAssignedEditor();
 
   const active = orders.filter((o) => o.status !== "done").length;
   const inReview = orders.filter((o) => o.status === "review").length;
@@ -29,6 +40,16 @@ export function DashboardOverviewPage() {
   const usagePercent = Math.round(
     (demoPlanUsage.used / demoPlanUsage.total) * 100,
   );
+  const editorName = editor ? formatEditorName(editor.email) : "Not assigned yet";
+  const editorInitials = editor
+    ? editor.email
+        .split("@")[0]
+        .split(/[._\s-]+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join("") || "ED"
+    : "--";
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 mesh-gradient min-h-full">
@@ -135,22 +156,33 @@ export function DashboardOverviewPage() {
               </p>
               <div className="flex items-center gap-3 mt-3">
                 <div className="h-12 w-12 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-sm font-bold text-white">
-                  SK
+                  {editorLoading ? "..." : editorInitials}
                 </div>
                 <div>
-                  <p className="font-semibold text-white">{dashboardCopy.editorName}</p>
+                  <p className="font-semibold text-white">
+                    {editorLoading ? "Loading..." : editorName}
+                  </p>
                   <p className="text-xs text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    {dashboardCopy.editorStatus}
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        editor ? "bg-emerald-400" : "bg-amber-400"
+                      }`}
+                    />
+                    {editor ? "Assigned to your account" : "Awaiting assignment"}
                   </p>
                 </div>
               </div>
               <p className="text-sm text-gray-400 mt-4 leading-relaxed">
-                {dashboardCopy.editorMessage}
+                {editorError
+                  ? editorError
+                  : editor
+                    ? `${editor.email} is assigned to your uploads.`
+                    : "Your editor will appear here once an admin assigns one to your account."}
               </p>
               <button
                 type="button"
-                className="mt-4 w-full text-sm font-semibold text-brand-300 bg-brand-500/15 hover:bg-brand-500/25 py-2.5 rounded-xl transition-colors"
+                disabled={!editor}
+                className="mt-4 w-full text-sm font-semibold text-brand-300 bg-brand-500/15 hover:bg-brand-500/25 py-2.5 rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Message editor
               </button>

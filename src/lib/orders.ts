@@ -11,12 +11,25 @@ export type OrderFile = {
   storagePath: string;
 };
 
+export type EditedVideo = {
+  id: string;
+  name: string;
+  size: number;
+  storagePath: string;
+  editorId?: string;
+  reviewStatus: "pending" | "satisfied" | "changes_requested";
+  clientComment?: string;
+  createdAt: string;
+  reviewedAt?: string;
+};
+
 export type Order = {
   id: string;
   userId: string;
   title: string;
   status: OrderStatus;
   files: OrderFile[];
+  editedVideos: EditedVideo[];
   footageUrl?: string;
   referenceUrl?: string;
   styleNotes?: string;
@@ -40,6 +53,17 @@ type OrderRow = {
     size_bytes: number;
     storage_path: string;
   }> | null;
+  edited_videos?: Array<{
+    id: string;
+    name: string;
+    size_bytes: number;
+    storage_path: string;
+    editor_id: string | null;
+    review_status: "pending" | "satisfied" | "changes_requested";
+    client_comment: string | null;
+    created_at: string;
+    reviewed_at: string | null;
+  }> | null;
 };
 
 export const ORDER_SELECT_WITH_FOOTAGE = `
@@ -57,6 +81,17 @@ export const ORDER_SELECT_WITH_FOOTAGE = `
     name,
     size_bytes,
     storage_path
+  ),
+  edited_videos (
+    id,
+    name,
+    size_bytes,
+    storage_path,
+    editor_id,
+    review_status,
+    client_comment,
+    created_at,
+    reviewed_at
   )
 `;
 
@@ -81,6 +116,14 @@ function isMissingFootageUrlError(message: string) {
   return message.includes("orders.footage_url") || message.includes("footage_url");
 }
 
+function formatUploadError(fileName: string, message: string) {
+  if (message.toLowerCase().includes("maximum allowed size")) {
+    return `Upload failed for "${fileName}": Supabase Free projects have a 50MB global upload limit. Use a Google Drive folder link for larger videos, or upgrade the Supabase project and raise the global storage file limit.`;
+  }
+
+  return `Upload failed for "${fileName}": ${message}`;
+}
+
 export function mapOrder(row: OrderRow): Order {
   return {
     id: row.id,
@@ -97,6 +140,17 @@ export function mapOrder(row: OrderRow): Order {
       name: f.name,
       size: Number(f.size_bytes),
       storagePath: f.storage_path,
+    })),
+    editedVideos: (row.edited_videos ?? []).map((video) => ({
+      id: video.id,
+      name: video.name,
+      size: Number(video.size_bytes),
+      storagePath: video.storage_path,
+      editorId: video.editor_id ?? undefined,
+      reviewStatus: video.review_status,
+      clientComment: video.client_comment ?? undefined,
+      createdAt: video.created_at,
+      reviewedAt: video.reviewed_at ?? undefined,
     })),
   };
 }
@@ -280,7 +334,7 @@ export async function createOrder(
       await supabase.from("orders").delete().eq("id", orderId);
       return {
         order: null,
-        error: `Upload failed for "${file.name}": ${uploadError.message}`,
+        error: formatUploadError(file.name, uploadError.message),
       };
     }
 
@@ -350,7 +404,7 @@ export async function addOrderFiles(
         .remove(fileRecords.map((record) => record.storage_path));
       return {
         order: null,
-        error: `Upload failed for "${file.name}": ${uploadError.message}`,
+        error: formatUploadError(file.name, uploadError.message),
       };
     }
 
@@ -437,6 +491,24 @@ export async function updateOrderStatus(
   }
 
   return getOrderById(userId, orderId);
+}
+
+export async function reviewEditedVideo(
+  editedVideoId: string,
+  reviewStatus: "satisfied" | "changes_requested",
+  comment: string,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const { error } = await supabase.rpc("client_review_edited_video", {
+    target_edited_video_id: editedVideoId,
+    next_review_status: reviewStatus,
+    review_comment: comment,
+  });
+
+  return { error: error?.message ?? null };
 }
 
 export async function getSignedFileUrl(

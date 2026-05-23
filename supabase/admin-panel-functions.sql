@@ -19,6 +19,12 @@ as $$
   );
 $$;
 
+insert into public.profiles (id, email, role)
+select id, coalesce(email, ''), 'user'
+from auth.users
+on conflict (id) do update
+  set email = excluded.email;
+
 create table if not exists public.editors (
   id uuid primary key default gen_random_uuid(),
   email text not null unique,
@@ -261,6 +267,28 @@ begin
 end;
 $$;
 
+create or replace function public.client_get_assigned_editor()
+returns table (
+  id uuid,
+  email text,
+  assigned_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    e.id,
+    e.email,
+    a.created_at as assigned_at
+  from public.editor_client_assignments a
+  join public.editors e on e.id = a.editor_id
+  where a.user_id = auth.uid()
+  order by a.created_at desc
+  limit 1;
+$$;
+
 create or replace function public.editor_list_clients(editor_token text)
 returns table (
   id uuid,
@@ -469,6 +497,7 @@ grant execute on function public.admin_list_editors() to authenticated;
 grant execute on function public.admin_create_editor(text, text) to authenticated;
 grant execute on function public.admin_assign_editor_client(uuid, uuid) to authenticated;
 grant execute on function public.admin_remove_editor_client(uuid, uuid) to authenticated;
+grant execute on function public.client_get_assigned_editor() to authenticated;
 grant execute on function public.editor_sign_in(text, text) to anon, authenticated;
 grant execute on function public.editor_list_clients(text) to anon, authenticated;
 grant execute on function public.editor_list_orders(text) to anon, authenticated;

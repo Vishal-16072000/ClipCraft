@@ -3,6 +3,7 @@ import {
   fetchEditorClients,
   fetchEditorOrders,
   updateEditorOrderStatus,
+  uploadEditedVideo,
   type EditorClient,
   type EditorOrder,
 } from "../lib/editor";
@@ -60,5 +61,22 @@ export function useEditorWorkspace(accessToken?: string) {
     [accessToken, refresh],
   );
 
-  return { clients, orders, loading, error, refresh, updateStatus };
+  const uploadEdit = useCallback(
+    async (orderId: string, file: File) => {
+      if (!accessToken) {
+        return { error: "Editor session is missing. Please sign in again." };
+      }
+
+      const result = await uploadEditedVideo(accessToken, orderId, file);
+
+      if (!result.error) {
+        await refresh();
+      }
+
+      return result;
+    },
+    [accessToken, refresh],
+  );
+
+  return { clients, orders, loading, error, refresh, updateStatus, uploadEdit };
 }
