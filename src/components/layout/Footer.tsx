@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Play, Share2, Video } from "lucide-react";
+import { Heart, Mail, Play, Share2, Video } from "lucide-react";
 import { siteConfig, footerContent } from "../../data/content";
 
 export function Footer() {
@@ -110,7 +110,12 @@ export function Footer() {
           <p className="text-sm text-gray-500">
             © {new Date().getFullYear()} {siteConfig.name}. {footerContent.copyright}
           </p>
-          <p className="text-sm text-gray-500">{siteConfig.domain}</p>
+          <div className="flex flex-col items-center gap-2 text-sm text-gray-500 sm:items-end">
+            <p>{siteConfig.domain}</p>
+            <p className="inline-flex items-center gap-1.5">
+              Made with <Heart className="h-3.5 w-3.5 fill-red-500 text-red-500" /> in India
+            </p>
+          </div>
         </div>
       </div>
     </footer>

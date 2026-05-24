@@ -64,7 +64,7 @@ export function Hero() {
             </p>
           </div>
 
-          <div className="relative animate-fade-up-delay-1 lg:pl-4">
+          <div className="relative animate-fade-up-delay-1 lg:pl-4 hidden lg:block">
             <div className="relative glass-strong rounded-3xl overflow-hidden glow-brand border border-white/10">
               <div className="absolute inset-0 bg-gradient-to-br from-brand-600/10 via-transparent to-accent-500/5 pointer-events-none" />
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-black/30">
