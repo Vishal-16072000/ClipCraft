@@ -41,7 +41,7 @@ export function HowItWorks() {
           ))}
         </div>
 
-        <div className="mt-12 text-center">
+        {/* <div className="mt-12 text-center">
           <a
             href="#pricing"
             className="inline-flex items-center gap-2 text-brand-400 hover:text-brand-300 font-semibold text-sm transition-colors"
@@ -49,7 +49,7 @@ export function HowItWorks() {
             {howItWorksSection.cta}
             <ArrowRight className="h-4 w-4" />
           </a>
-        </div>
+        </div> */}
       </div>
     </section>
   );

@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "ClipCraft",
   tagline: "Premium managed editing for creators who scale",
   domain: "clipcraft.in",
-  email: "contact@clipcraft.in",
+  email: "vishal@clipcraft.in",
   instagram: "@clipcraft.in",
   youtube: "@ClipCraftHQ",
 };
