@@ -42,6 +42,7 @@ type AuthContextValue = {
   signUpWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
+  updateProfileName: (fullName: string) => Promise<{ error: string | null }>;
   refreshRole: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -276,7 +277,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) {
       return { error: "Supabase is not configured. Add your env keys and restart the dev server." };
     }
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
     return { error: error ? formatAuthError(error.message) : null };
   }, []);
 
@@ -299,6 +306,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       redirectTo: `${window.location.origin}/signin`,
     });
     return { error: error ? formatAuthError(error.message) : null };
+  }, []);
+
+  const updateProfileName = useCallback(async (fullName: string) => {
+    if (!supabase) {
+      return { error: "Supabase is not configured. Add your env keys and restart the dev server." };
+    }
+
+    const trimmedName = fullName.trim();
+
+    if (!trimmedName) {
+      return { error: "Display name is required." };
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+      data: { full_name: trimmedName },
+    });
+
+    if (error) {
+      return { error: formatAuthError(error.message) };
+    }
+
+    if (data.user) {
+      setUser(data.user);
+    }
+
+    return { error: null };
   }, []);
 
   const signOut = useCallback(async () => {
@@ -325,6 +358,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithEmail,
       signInWithGoogle,
       resetPassword,
+      updateProfileName,
       refreshRole,
       signOut,
     }),
@@ -338,6 +372,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithEmail,
       signInWithGoogle,
       resetPassword,
+      updateProfileName,
       refreshRole,
       signOut,
     ],

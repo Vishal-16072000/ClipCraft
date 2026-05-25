@@ -20,6 +20,9 @@ const initialForm: LeadForm = {
   message: "",
 };
 
+const fieldClass =
+  "w-full min-w-0 rounded-2xl border border-white/25 bg-white/10 px-4 py-3.5 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/40 sm:px-5 sm:py-4";
+
 export function FinalCTA() {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState<LeadForm>(initialForm);
@@ -105,7 +108,7 @@ export function FinalCTA() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_50%)]" />
           <div className="absolute inset-0 opacity-30 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:48px_48px]" />
 
-          <div className="relative px-6 py-16 sm:px-12 sm:py-20 lg:px-20 lg:py-24">
+          <div className="relative px-4 py-14 sm:px-12 sm:py-20 lg:px-20 lg:py-24">
             <div className="max-w-3xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-sm text-white/90 mb-6">
                 <Clock className="h-4 w-4" />
@@ -132,7 +135,7 @@ export function FinalCTA() {
 
               <form
                 onSubmit={handleSubmit}
-                className="mx-auto mt-10 grid max-w-2xl gap-3 rounded-3xl border border-white/15 bg-black/10 p-4 text-left backdrop-blur sm:grid-cols-2 sm:p-5"
+                className="mx-auto mt-10 grid w-full min-w-0 max-w-2xl gap-3 rounded-3xl border border-white/15 bg-black/10 p-3 text-left backdrop-blur sm:grid-cols-2 sm:p-5"
               >
                 <input
                   type="text"
@@ -140,7 +143,7 @@ export function FinalCTA() {
                   value={form.name}
                   onChange={(e) => updateField("name", e.target.value)}
                   placeholder="Your name"
-                  className="rounded-2xl border border-white/25 bg-white/10 px-5 py-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/40"
+                  className={fieldClass}
                 />
                 <input
                   type="email"
@@ -148,7 +151,7 @@ export function FinalCTA() {
                   value={form.email}
                   onChange={(e) => updateField("email", e.target.value)}
                   placeholder={finalCta.placeholder}
-                  className="rounded-2xl border border-white/25 bg-white/10 px-5 py-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/40"
+                  className={fieldClass}
                 />
                 <input
                   type="tel"
@@ -156,13 +159,13 @@ export function FinalCTA() {
                   value={form.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
                   placeholder="WhatsApp / phone"
-                  className="rounded-2xl border border-white/25 bg-white/10 px-5 py-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/40"
+                  className={fieldClass}
                 />
                 <select
                   required
                   value={form.contentType}
                   onChange={(e) => updateField("contentType", e.target.value)}
-                  className="rounded-2xl border border-white/25 bg-white/10 px-5 py-4 text-white outline-none focus:ring-2 focus:ring-white/40"
+                  className={fieldClass}
                 >
                   <option value="" className="bg-surface-900">
                     Content type
@@ -184,7 +187,7 @@ export function FinalCTA() {
                   required
                   value={form.monthlyVideos}
                   onChange={(e) => updateField("monthlyVideos", e.target.value)}
-                  className="rounded-2xl border border-white/25 bg-white/10 px-5 py-4 text-white outline-none focus:ring-2 focus:ring-white/40 sm:col-span-2"
+                  className={`${fieldClass} sm:col-span-2`}
                 >
                   <option value="" className="bg-surface-900">
                     How many videos per month?
@@ -204,7 +207,7 @@ export function FinalCTA() {
                   onChange={(e) => updateField("message", e.target.value)}
                   placeholder="Tell us what you create and what you need edited"
                   rows={4}
-                  className="resize-none rounded-2xl border border-white/25 bg-white/10 px-5 py-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/40 sm:col-span-2"
+                  className={`${fieldClass} resize-none sm:col-span-2`}
                 />
                 {error && (
                   <p className="rounded-2xl border border-red-300/30 bg-red-500/20 px-4 py-3 text-sm text-white sm:col-span-2">

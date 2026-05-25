@@ -37,9 +37,10 @@ export function DashboardOverviewPage() {
     user?.email?.split("@")[0] ??
     "Creator";
 
-  const usagePercent = Math.round(
-    (demoPlanUsage.used / demoPlanUsage.total) * 100,
-  );
+  const hasActivePlan = demoPlanUsage.total > 0;
+  const usagePercent = hasActivePlan
+    ? Math.round((demoPlanUsage.used / demoPlanUsage.total) * 100)
+    : 0;
   const editorName = editor ? formatEditorName(editor.email) : "Not assigned yet";
   const editorInitials = editor
     ? editor.email
@@ -194,28 +195,37 @@ export function DashboardOverviewPage() {
                   {dashboardCopy.planLabel}
                 </p>
                 <span className="text-xs font-semibold text-brand-300 bg-brand-500/15 px-2 py-0.5 rounded-full">
-                  {dashboardCopy.planName}
+                  {hasActivePlan ? dashboardCopy.planName : "No Plan"}
                 </span>
               </div>
               <p className="text-sm text-gray-400 mt-2">{dashboardCopy.planDescription}</p>
 
-              <div className="mt-4">
-                <div className="flex justify-between text-xs mb-2">
-                  <span className="text-gray-500">{dashboardCopy.editsRemaining}</span>
-                  <span className="text-white font-medium">
-                    {demoPlanUsage.total - demoPlanUsage.used} / {demoPlanUsage.total}
-                  </span>
+              {hasActivePlan ? (
+                <div className="mt-4">
+                  <div className="flex justify-between text-xs mb-2">
+                    <span className="text-gray-500">{dashboardCopy.editsRemaining}</span>
+                    <span className="text-white font-medium">
+                      {demoPlanUsage.total - demoPlanUsage.used} / {demoPlanUsage.total}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-surface-600 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-400 transition-all"
+                      style={{ width: `${usagePercent}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Renews in {demoPlanUsage.renewsIn}
+                  </p>
                 </div>
-                <div className="h-2 rounded-full bg-surface-600 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-400 transition-all"
-                    style={{ width: `${usagePercent}%` }}
-                  />
+              ) : (
+                <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                  <p className="text-sm font-semibold text-white">No Plan Active</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Select a plan to start sending edits to your dedicated editor.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Renews in {demoPlanUsage.renewsIn}
-                </p>
-              </div>
+              )}
 
               <a
                 href="/#pricing"

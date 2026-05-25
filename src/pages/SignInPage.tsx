@@ -7,6 +7,8 @@ import {
   Lock,
   AlertCircle,
   CheckCircle2,
+  Eye,
+  EyeOff,
   Info,
 } from "lucide-react";
 import { Navbar } from "../components/layout/Navbar";
@@ -17,6 +19,7 @@ type AuthMode = "signin" | "signup" | "forgot";
 
 const inputClassName =
   "w-full rounded-xl bg-surface-700/50 border border-white/10 px-4 py-3 pl-11 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50";
+const passwordInputClassName = `${inputClassName} pr-12`;
 
 export function SignInPage() {
   const navigate = useNavigate();
@@ -37,6 +40,7 @@ export function SignInPage() {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -105,6 +109,7 @@ export function SignInPage() {
     setMode(next);
     setError(null);
     setSuccess(null);
+    setShowPassword(false);
   }
 
   const title =
@@ -238,7 +243,7 @@ export function SignInPage() {
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                     <input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       autoComplete={
                         mode === "signup" ? "new-password" : "current-password"
                       }
@@ -249,8 +254,21 @@ export function SignInPage() {
                       placeholder={
                         mode === "signup" ? "Min. 8 characters" : "Password"
                       }
-                      className={inputClassName}
+                      className={passwordInputClassName}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-500 transition-colors hover:bg-white/5 hover:text-white"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
               )}

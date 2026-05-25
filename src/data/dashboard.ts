@@ -27,9 +27,9 @@ export const dashboardCopy = {
   noOrdersDescription:
     "Upload your first batch of raw footage and your dedicated editor will take it from there.",
   planLabel: "Current plan",
-  planName: "Creator",
-  planDescription: "8 edits / month · 24hr delivery",
-  upgradeCta: "Upgrade plan",
+  planName: "No Plan Active",
+  planDescription: "Choose a plan to unlock monthly edits and priority delivery.",
+  upgradeCta: "View plans",
   turnaround: "48hr turnaround",
   uploadTitle: "New upload",
   uploadSubtitle:
@@ -43,9 +43,9 @@ export const dashboardCopy = {
 };
 
 export const demoPlanUsage = {
-  used: 3,
-  total: 8,
-  renewsIn: "12 days",
+  used: 0,
+  total: 0,
+  renewsIn: "after plan activation",
 };
 
 export const statusColors: Record<

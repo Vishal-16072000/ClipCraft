@@ -1,16 +1,42 @@
-import { useState } from "react";
-import { Mail, User, CreditCard, Bell, Shield } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { AlertCircle, CheckCircle2, Loader2, Mail, User, CreditCard, Bell, Shield } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { dashboardCopy, demoPlanUsage } from "../../data/dashboard";
 
 export function DashboardSettingsPage() {
-  const { user } = useAuth();
+  const { user, updateProfileName } = useAuth();
   const [notifications, setNotifications] = useState(true);
+  const [displayNameInput, setDisplayNameInput] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
 
   const displayName =
     user?.user_metadata?.full_name ??
     user?.email?.split("@")[0] ??
     "";
+  const hasActivePlan = demoPlanUsage.total > 0;
+
+  useEffect(() => {
+    setDisplayNameInput(displayName);
+  }, [displayName]);
+
+  async function handleProfileSubmit(event: FormEvent) {
+    event.preventDefault();
+    setProfileError(null);
+    setProfileSuccess(null);
+    setSavingProfile(true);
+
+    const result = await updateProfileName(displayNameInput);
+    setSavingProfile(false);
+
+    if (result.error) {
+      setProfileError(result.error);
+      return;
+    }
+
+    setProfileSuccess("Profile name updated.");
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-full">
@@ -27,7 +53,7 @@ export function DashboardSettingsPage() {
             <User className="h-4 w-4 text-brand-400" />
             Profile
           </h2>
-          <div className="space-y-4">
+          <form onSubmit={handleProfileSubmit} className="space-y-4">
             <div>
               <label htmlFor="displayName" className="block text-xs text-gray-500 mb-1.5">
                 Display name
@@ -35,7 +61,9 @@ export function DashboardSettingsPage() {
               <input
                 id="displayName"
                 type="text"
-                defaultValue={displayName}
+                required
+                value={displayNameInput}
+                onChange={(event) => setDisplayNameInput(event.target.value)}
                 className="w-full rounded-xl bg-surface-700/50 border border-white/10 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50"
               />
             </div>
@@ -48,6 +76,7 @@ export function DashboardSettingsPage() {
                 <input
                   id="email"
                   type="email"
+                  disabled
                   readOnly
                   value={user?.email ?? ""}
                   className="w-full rounded-xl bg-surface-700/30 border border-white/10 px-4 py-3 pl-11 text-gray-400 cursor-not-allowed"
@@ -57,13 +86,27 @@ export function DashboardSettingsPage() {
                 Email is managed through your sign-in provider.
               </p>
             </div>
+            {profileError && (
+              <p className="flex gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {profileError}
+              </p>
+            )}
+            {profileSuccess && (
+              <p className="flex gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {profileSuccess}
+              </p>
+            )}
             <button
-              type="button"
-              className="text-sm font-semibold text-brand-400 hover:text-brand-300 transition-colors"
+              type="submit"
+              disabled={savingProfile}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-brand-400 transition-colors hover:text-brand-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
+              {savingProfile && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Save profile
             </button>
-          </div>
+          </form>
         </section>
 
         <section className="glass rounded-2xl p-6 mb-6">
@@ -74,11 +117,12 @@ export function DashboardSettingsPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="font-display text-lg font-bold text-white">
-                {dashboardCopy.planName} plan
+                {dashboardCopy.planName}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                {demoPlanUsage.used} of {demoPlanUsage.total} edits used · Renews in{" "}
-                {demoPlanUsage.renewsIn}
+                {hasActivePlan
+                  ? `${demoPlanUsage.used} of ${demoPlanUsage.total} edits used · Renews in ${demoPlanUsage.renewsIn}`
+                  : "No Plan Active. Choose a plan to unlock monthly edits."}
               </p>
             </div>
             <a
