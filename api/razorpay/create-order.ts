@@ -12,11 +12,15 @@ type VercelResponse = {
   setHeader: (name: string, value: string) => void;
 };
 
-function getStringBody(body: unknown) {
-  if (body && typeof body === "object") return body;
+type JsonRecord = Record<string, unknown>;
+
+function getStringBody(body: unknown): JsonRecord {
+  // Vercel/Next-style handlers me `req.body` sometimes comes typed as `unknown`.
+  // We normalize it into a JSON object record so TS doesn't treat it as plain `object`.
+  if (body && typeof body === "object" && !Array.isArray(body)) return body as JsonRecord;
   if (typeof body === "string") {
     try {
-      return JSON.parse(body) as Record<string, unknown>;
+      return JSON.parse(body) as JsonRecord;
     } catch {
       return {};
     }
