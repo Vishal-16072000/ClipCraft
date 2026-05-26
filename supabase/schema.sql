@@ -109,6 +109,47 @@ begin
 end;
 $$;
 
+-- Subscriptions (Razorpay)
+-- Stores plan activation after payment verification.
+create table if not exists public.subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  plan_id text not null,
+  billing_cycle text not null check (billing_cycle in ('monthly', 'yearly')),
+  status text not null default 'pending'
+    check (status in ('pending', 'active', 'cancelled', 'failed')),
+  amount_in_paise integer not null,
+  currency text not null default 'INR',
+  razorpay_order_id text not null unique,
+  razorpay_payment_id text,
+  razorpay_signature text,
+  current_period_start timestamptz not null default now(),
+  current_period_end timestamptz not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists subscriptions_user_id_idx on public.subscriptions (user_id);
+create index if not exists subscriptions_period_end_idx on public.subscriptions (current_period_end desc);
+
+-- RLS: subscriptions
+alter table public.subscriptions enable row level security;
+
+drop policy if exists "Users read own subscriptions" on public.subscriptions;
+create policy "Users read own subscriptions"
+  on public.subscriptions for select
+  using (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists "Users create own subscriptions" on public.subscriptions;
+create policy "Users create own subscriptions"
+  on public.subscriptions for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users update own subscriptions" on public.subscriptions;
+create policy "Users update own subscriptions"
+  on public.subscriptions for update
+  using (auth.uid() = user_id or public.is_admin());
+
 -- Orders
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),

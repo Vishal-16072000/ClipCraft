@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Upload,
@@ -10,8 +11,10 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { useAssignedEditor } from "../../hooks/useAssignedEditor";
 import { useOrders } from "../../hooks/useOrders";
-import { dashboardCopy, demoPlanUsage } from "../../data/dashboard";
+import { useSubscription } from "../../hooks/useSubscription";
+import { dashboardCopy } from "../../data/dashboard";
 import { OrderCard } from "../../components/dashboard/OrderCard";
+import { getPlanDisplayName, getTotalEdits } from "../../lib/subscriptions";
 
 function formatEditorName(email: string) {
   return email
@@ -25,6 +28,7 @@ function formatEditorName(email: string) {
 export function DashboardOverviewPage() {
   const { user } = useAuth();
   const { orders } = useOrders();
+  const { subscription } = useSubscription();
   const { editor, loading: editorLoading, error: editorError } = useAssignedEditor();
 
   const active = orders.filter((o) => o.status !== "done").length;
@@ -37,10 +41,38 @@ export function DashboardOverviewPage() {
     user?.email?.split("@")[0] ??
     "Creator";
 
-  const hasActivePlan = demoPlanUsage.total > 0;
-  const usagePercent = hasActivePlan
-    ? Math.round((demoPlanUsage.used / demoPlanUsage.total) * 100)
+  const [now] = useState(() => Date.now());
+  const hasActivePlan = Boolean(
+    subscription && new Date(subscription.currentPeriodEnd).getTime() > now,
+  );
+
+  const currentPeriodStartMs = subscription
+    ? new Date(subscription.currentPeriodStart).getTime()
     : 0;
+  const currentPeriodEndMs = subscription
+    ? new Date(subscription.currentPeriodEnd).getTime()
+    : 0;
+
+  const usedEdits = hasActivePlan
+    ? orders.filter((o) => {
+        const createdAtMs = new Date(o.createdAt).getTime();
+        return createdAtMs >= currentPeriodStartMs && createdAtMs <= currentPeriodEndMs;
+      }).length
+    : 0;
+
+  const totalEdits = subscription ? getTotalEdits(subscription.planId, subscription.billingCycle) : null;
+  const usagePercent =
+    totalEdits !== null && totalEdits > 0 ? Math.round((usedEdits / totalEdits) * 100) : 0;
+
+  const renewsInLabel = hasActivePlan
+    ? (() => {
+        const diffMs = currentPeriodEndMs - now;
+        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        if (!Number.isFinite(days)) return "—";
+        if (days <= 0) return "Renewing…";
+        return `Renews in ${days} day${days === 1 ? "" : "s"}`;
+      })()
+    : "after plan activation";
   const editorName = editor ? formatEditorName(editor.email) : "Not assigned yet";
   const editorInitials = editor
     ? editor.email
@@ -195,7 +227,9 @@ export function DashboardOverviewPage() {
                   {dashboardCopy.planLabel}
                 </p>
                 <span className="text-xs font-semibold text-brand-300 bg-brand-500/15 px-2 py-0.5 rounded-full">
-                  {hasActivePlan ? dashboardCopy.planName : "No Plan"}
+                  {hasActivePlan && subscription
+                    ? getPlanDisplayName(subscription.planId)
+                    : "No Plan"}
                 </span>
               </div>
               <p className="text-sm text-gray-400 mt-2">{dashboardCopy.planDescription}</p>
@@ -205,18 +239,18 @@ export function DashboardOverviewPage() {
                   <div className="flex justify-between text-xs mb-2">
                     <span className="text-gray-500">{dashboardCopy.editsRemaining}</span>
                     <span className="text-white font-medium">
-                      {demoPlanUsage.total - demoPlanUsage.used} / {demoPlanUsage.total}
+                      {totalEdits === null ? "Unlimited" : `${totalEdits - usedEdits} / ${totalEdits}`}
                     </span>
                   </div>
-                  <div className="h-2 rounded-full bg-surface-600 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-400 transition-all"
-                      style={{ width: `${usagePercent}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Renews in {demoPlanUsage.renewsIn}
-                  </p>
+                  {totalEdits !== null && (
+                    <div className="h-2 rounded-full bg-surface-600 overflow-hidden mt-2">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-400 transition-all"
+                        style={{ width: `${usagePercent}%` }}
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">{renewsInLabel}</p>
                 </div>
               ) : (
                 <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">

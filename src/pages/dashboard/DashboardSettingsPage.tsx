@@ -1,10 +1,15 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { AlertCircle, CheckCircle2, Loader2, Mail, User, CreditCard, Bell, Shield } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { dashboardCopy, demoPlanUsage } from "../../data/dashboard";
+import { dashboardCopy } from "../../data/dashboard";
+import { useOrders } from "../../hooks/useOrders";
+import { useSubscription } from "../../hooks/useSubscription";
+import { getPlanDisplayName, getTotalEdits } from "../../lib/subscriptions";
 
 export function DashboardSettingsPage() {
   const { user, updateProfileName } = useAuth();
+  const { orders } = useOrders();
+  const { subscription } = useSubscription();
   const [notifications, setNotifications] = useState(true);
   const [displayNameInput, setDisplayNameInput] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
@@ -15,9 +20,38 @@ export function DashboardSettingsPage() {
     user?.user_metadata?.full_name ??
     user?.email?.split("@")[0] ??
     "";
-  const hasActivePlan = demoPlanUsage.total > 0;
+  const [now] = useState(() => Date.now());
+  const hasActivePlan = Boolean(
+    subscription && new Date(subscription.currentPeriodEnd).getTime() > now,
+  );
+
+  const currentPeriodStartMs = subscription
+    ? new Date(subscription.currentPeriodStart).getTime()
+    : 0;
+  const currentPeriodEndMs = subscription
+    ? new Date(subscription.currentPeriodEnd).getTime()
+    : 0;
+
+  const usedEdits = hasActivePlan
+    ? orders.filter((o) => {
+        const createdAtMs = new Date(o.createdAt).getTime();
+        return createdAtMs >= currentPeriodStartMs && createdAtMs <= currentPeriodEndMs;
+      }).length
+    : 0;
+
+  const totalEdits = subscription ? getTotalEdits(subscription.planId, subscription.billingCycle) : null;
+  const renewsInLabel = hasActivePlan
+    ? (() => {
+        const diffMs = currentPeriodEndMs - now;
+        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        if (!Number.isFinite(days)) return "—";
+        if (days <= 0) return "Renewing…";
+        return `Renews in ${days} day${days === 1 ? "" : "s"}`;
+      })()
+    : null;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplayNameInput(displayName);
   }, [displayName]);
 
@@ -117,11 +151,15 @@ export function DashboardSettingsPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="font-display text-lg font-bold text-white">
-                {dashboardCopy.planName}
+                {hasActivePlan && subscription
+                  ? getPlanDisplayName(subscription.planId)
+                  : dashboardCopy.planName}
               </p>
               <p className="text-sm text-gray-500 mt-1">
                 {hasActivePlan
-                  ? `${demoPlanUsage.used} of ${demoPlanUsage.total} edits used · Renews in ${demoPlanUsage.renewsIn}`
+                  ? totalEdits === null
+                    ? `Unlimited edits · ${renewsInLabel}`
+                    : `${usedEdits} of ${totalEdits} edits used · ${renewsInLabel}`
                   : "No Plan Active. Choose a plan to unlock monthly edits."}
               </p>
             </div>
