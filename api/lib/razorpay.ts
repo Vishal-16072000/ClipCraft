@@ -53,11 +53,17 @@ function verifyRazorpaySignature(params: {
 }
 
 async function getSupabaseFromAccessToken(accessToken: string) {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const supabaseAnonKey =
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.VITE_SUPABASE_ANON_KEY ??
+    process.env.SUPABASE_PUBLISHABLE_KEY ??
+    process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Supabase is not configured (missing VITE_SUPABASE_URL / key).");
+    throw new Error(
+      "Supabase is not configured (missing VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY (or *_ANON_KEY)).",
+    );
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {

@@ -84,9 +84,16 @@ export function Pricing() {
         body: JSON.stringify({ planId, billingCycle: effectiveBillingCycle }),
       });
 
-      const createJson = (await createRes.json().catch(() => null)) as
-        | { success?: boolean; error?: string; orderId?: string; amountInPaise?: number; currency?: string; keyId?: string }
-        | null;
+      const createText = await createRes.text().catch(() => "");
+      const createJson = (() => {
+        try {
+          return (createText ? JSON.parse(createText) : null) as
+            | { success?: boolean; error?: string; orderId?: string; amountInPaise?: number; currency?: string; keyId?: string }
+            | null;
+        } catch {
+          return null;
+        }
+      })();
 
       if (
         !createRes.ok ||
@@ -96,7 +103,8 @@ export function Pricing() {
         !createJson.currency ||
         !createJson.keyId
       ) {
-        throw new Error(createJson?.error ?? "Could not start Razorpay checkout.");
+        const statusHint = createRes.ok ? "" : ` (HTTP ${createRes.status})`;
+        throw new Error(createJson?.error ?? (createText ? `Could not start Razorpay checkout${statusHint}.` : `Could not start Razorpay checkout${statusHint}.`));
       }
 
       await loadRazorpayCheckoutScript();
@@ -219,7 +227,7 @@ export function Pricing() {
               key={plan.id}
               className={`relative rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-300 ${
                 plan.popular
-                  ? "bg-gradient-to-b from-brand-600/25 via-brand-900/20 to-surface-900 border-2 border-brand-500/50 glow-brand scale-[1.02] z-10"
+                  ? "bg-linear-to-b from-brand-600/25 via-brand-900/20 to-surface-900 border-2 border-brand-500/50 glow-brand scale-[1.02] z-10"
                   : "glass border border-white/10 hover:border-white/20 hover:-translate-y-1"
               }`}
             >
