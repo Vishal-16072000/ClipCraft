@@ -1,4 +1,4 @@
-import { sendContactEmail, type ContactRequest } from "../server/contactEmail";
+import { sendContactEmail, type ContactRequest } from "./lib/contact";
 
 type VercelRequest = {
   method?: string;

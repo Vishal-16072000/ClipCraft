@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { loadEnv } from 'vite'
-import { sendContactEmail, type ContactRequest } from './server/contactEmail'
+import { sendContactEmail, type ContactRequest } from './api/lib/contact'
 
 function readJsonBody(req: import('node:http').IncomingMessage) {
   return new Promise<ContactRequest>((resolve) => {

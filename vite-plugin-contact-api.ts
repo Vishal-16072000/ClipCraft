@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { loadEnv, type Plugin } from "vite";
-import { handleContactRequest, type ContactPayload } from "./api/lib/contact";
+import { sendContactEmail, type ContactRequest } from "./api/lib/contact";
 
-function readJsonBody(req: IncomingMessage): Promise<ContactPayload> {
+function readJsonBody(req: IncomingMessage): Promise<ContactRequest> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
 
@@ -10,7 +10,7 @@ function readJsonBody(req: IncomingMessage): Promise<ContactPayload> {
     req.on("end", () => {
       try {
         const raw = Buffer.concat(chunks).toString("utf8");
-        resolve(raw ? (JSON.parse(raw) as ContactPayload) : {});
+        resolve(raw ? (JSON.parse(raw) as ContactRequest) : {});
       } catch {
         reject(new Error("Invalid JSON body."));
       }
@@ -61,7 +61,7 @@ export function contactApiDev(): Plugin {
 
         try {
           const body = await readJsonBody(req);
-          const result = await handleContactRequest(body);
+          const result = await sendContactEmail(body, process.env);
           sendJson(res, result.status, result.body);
         } catch {
           sendJson(res, 400, { error: "Invalid request body." });

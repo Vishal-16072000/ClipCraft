@@ -1,15 +1,16 @@
-export type ContactPayload = {
+export type ContactRequest = {
   name?: string;
   email?: string;
   phone?: string;
   contentType?: string;
-  preferredTime?: string;
+  monthlyVideos?: string;
   message?: string;
 };
 
-export type ContactResult = {
-  status: number;
-  body: Record<string, unknown>;
+export type ContactEmailEnv = {
+  RESEND_API_KEY?: string;
+  CONTACT_TO_EMAIL?: string;
+  CONTACT_FROM_EMAIL?: string;
 };
 
 const requiredEnv = ["RESEND_API_KEY", "CONTACT_TO_EMAIL", "CONTACT_FROM_EMAIL"] as const;
@@ -27,10 +28,17 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#039;");
 }
 
-export async function handleContactRequest(
-  payload: ContactPayload,
-): Promise<ContactResult> {
-  const missingEnv = requiredEnv.filter((key) => isMissing(process.env[key]));
+function getErrorMessage(details: string) {
+  try {
+    const parsed = JSON.parse(details) as { message?: string; error?: string };
+    return parsed.message ?? parsed.error;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function sendContactEmail(body: ContactRequest, env: ContactEmailEnv) {
+  const missingEnv = requiredEnv.filter((key) => isMissing(env[key]));
 
   if (missingEnv.length > 0) {
     return {
@@ -41,14 +49,14 @@ export async function handleContactRequest(
     };
   }
 
-  const name = payload.name?.trim() ?? "";
-  const email = payload.email?.trim() ?? "";
-  const phone = payload.phone?.trim() ?? "";
-  const contentType = payload.contentType?.trim() ?? "";
-  const preferredTime = payload.preferredTime?.trim() ?? "";
-  const message = payload.message?.trim() ?? "";
+  const name = body.name?.trim() ?? "";
+  const email = body.email?.trim() ?? "";
+  const phone = body.phone?.trim() ?? "";
+  const contentType = body.contentType?.trim() ?? "";
+  const monthlyVideos = body.monthlyVideos?.trim() ?? "";
+  const message = body.message?.trim() ?? "";
 
-  if (!name || !email || !phone || !contentType || !preferredTime) {
+  if (!name || !email || !phone || !contentType || !monthlyVideos) {
     return {
       status: 400,
       body: { error: "Please fill all required fields." },
@@ -56,47 +64,58 @@ export async function handleContactRequest(
   }
 
   const html = `
-    <h2>New ClipCraft meeting request</h2>
+    <h2>New ClipCraft editor request</h2>
     <p><strong>Name:</strong> ${escapeHtml(name)}</p>
     <p><strong>Email:</strong> ${escapeHtml(email)}</p>
     <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
-    <p><strong>Discussion topic:</strong> ${escapeHtml(contentType)}</p>
-    <p><strong>Preferred meeting time:</strong> ${escapeHtml(preferredTime)}</p>
-    <p><strong>Questions / notes:</strong></p>
+    <p><strong>Content type:</strong> ${escapeHtml(contentType)}</p>
+    <p><strong>Monthly videos:</strong> ${escapeHtml(monthlyVideos)}</p>
+    <p><strong>Message:</strong></p>
     <p>${escapeHtml(message || "No message added.").replace(/\n/g, "<br />")}</p>
   `;
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: process.env.CONTACT_FROM_EMAIL,
-      to: process.env.CONTACT_TO_EMAIL,
-      reply_to: email,
-      subject: `New ClipCraft meeting request from ${name}`,
-      html,
-    }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.CONTACT_FROM_EMAIL,
+        to: env.CONTACT_TO_EMAIL,
+        reply_to: email,
+        subject: `New ClipCraft request from ${name}`,
+        html,
+      }),
+    });
+  } catch (error) {
+    console.error("Resend request failed:", error);
+    return {
+      status: 502,
+      body: {
+        error: "Could not connect to the email service. Please try again.",
+      },
+    };
+  }
 
   if (!response.ok) {
     const details = await response.text();
-    let error = "Could not send your request right now. Please try again.";
+    const resendMessage = getErrorMessage(details);
 
-    try {
-      const parsed = JSON.parse(details) as { message?: string };
-      if (parsed.message) {
-        error = parsed.message;
-      }
-    } catch {
-      // keep generic message
-    }
+    console.error("Resend email failed:", {
+      status: response.status,
+      statusText: response.statusText,
+      details,
+    });
 
     return {
       status: 502,
-      body: { error },
+      body: {
+        error: resendMessage ?? "Could not send your request right now. Please try again.",
+      },
     };
   }
 
