@@ -1,4 +1,4 @@
-import { sendContactEmail, type ContactRequest } from "./contactEmail";
+import { sendContactEmail, type ContactRequest } from "../server/contactEmail";
 
 type VercelRequest = {
   method?: string;
@@ -36,6 +36,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const result = await sendContactEmail(parseBody(req.body), process.env);
-  res.status(result.status).json(result.body);
+  try {
+    const result = await sendContactEmail(parseBody(req.body), process.env);
+    res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error("Contact form failed:", error);
+    res.status(500).json({
+      error: "Could not submit the form. Please try again.",
+    });
+  }
 }

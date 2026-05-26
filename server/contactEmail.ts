@@ -65,20 +65,32 @@ export async function sendContactEmail(body: ContactRequest, env: ContactEmailEn
     <p>${escapeHtml(message || "No message added.").replace(/\n/g, "<br />")}</p>
   `;
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: env.CONTACT_FROM_EMAIL,
-      to: env.CONTACT_TO_EMAIL,
-      reply_to: email,
-      subject: `New ClipCraft request from ${name}`,
-      html,
-    }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.CONTACT_FROM_EMAIL,
+        to: env.CONTACT_TO_EMAIL,
+        reply_to: email,
+        subject: `New ClipCraft request from ${name}`,
+        html,
+      }),
+    });
+  } catch (error) {
+    return {
+      status: 502,
+      body: {
+        error: "Could not connect to the email service. Please try again.",
+        details: error instanceof Error ? error.message : "Unknown network error",
+      },
+    };
+  }
 
   if (!response.ok) {
     const details = await response.text();
