@@ -1,3 +1,5 @@
+import Mailjet from "node-mailjet";
+
 export type ContactRequest = {
   name?: string;
   email?: string;
@@ -8,12 +10,18 @@ export type ContactRequest = {
 };
 
 export type ContactEmailEnv = {
-  RESEND_API_KEY?: string;
-  CONTACT_TO_EMAIL?: string;
+  MJ_APIKEY_PUBLIC?: string;
+  MJ_APIKEY_PRIVATE?: string;
   CONTACT_FROM_EMAIL?: string;
+  CONTACT_FROM_NAME?: string;
+  CONTACT_TO_EMAIL?: string;
+  CONTACT_TO_NAME?: string;
 };
 
-const requiredEnv = ["RESEND_API_KEY", "CONTACT_TO_EMAIL", "CONTACT_FROM_EMAIL"] as const;
+const defaultFromEmail = "vishaldhangarmca21@gmail.com";
+const defaultFromName = "ClipCraft";
+const defaultToEmail = "support@clipcraft.co.in";
+const defaultToName = "Vishal";
 
 function isMissing(value: unknown) {
   return typeof value !== "string" || value.trim() === "";
@@ -28,26 +36,31 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#039;");
 }
 
-function getErrorMessage(details: string) {
-  try {
-    const parsed = JSON.parse(details) as { message?: string; error?: string };
-    return parsed.message ?? parsed.error;
-  } catch {
-    return undefined;
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
   }
+
+  return "Could not submit the form. Please try again.";
 }
 
 export async function sendContactEmail(body: ContactRequest, env: ContactEmailEnv) {
-  const missingEnv = requiredEnv.filter((key) => isMissing(env[key]));
-
-  if (missingEnv.length > 0) {
+  if (isMissing(env.MJ_APIKEY_PUBLIC) || isMissing(env.MJ_APIKEY_PRIVATE)) {
     return {
       status: 503,
       body: {
-        error: `Contact form is not configured. Missing: ${missingEnv.join(", ")}.`,
+        success: false,
+        error: "Contact form is not configured. Missing Mailjet API keys.",
+        message: "Contact form is not configured. Missing Mailjet API keys.",
       },
     };
   }
+
+  const mailjetPublicKey = env.MJ_APIKEY_PUBLIC as string;
+  const mailjetPrivateKey = env.MJ_APIKEY_PRIVATE as string;
 
   const name = body.name?.trim() ?? "";
   const email = body.email?.trim() ?? "";
@@ -59,12 +72,21 @@ export async function sendContactEmail(body: ContactRequest, env: ContactEmailEn
   if (!name || !email || !phone || !contentType || !monthlyVideos) {
     return {
       status: 400,
-      body: { error: "Please fill all required fields." },
+      body: {
+        success: false,
+        error: "Please fill all required fields.",
+        message: "Please fill all required fields.",
+      },
     };
   }
 
+  const fromEmail = env.CONTACT_FROM_EMAIL?.trim() || defaultFromEmail;
+  const fromName = env.CONTACT_FROM_NAME?.trim() || defaultFromName;
+  const toEmail = env.CONTACT_TO_EMAIL?.trim() || defaultToEmail;
+  const toName = env.CONTACT_TO_NAME?.trim() || defaultToName;
+
   const html = `
-    <h2>New ClipCraft editor request</h2>
+    <h2>New Meeting Request</h2>
     <p><strong>Name:</strong> ${escapeHtml(name)}</p>
     <p><strong>Email:</strong> ${escapeHtml(email)}</p>
     <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
@@ -74,50 +96,51 @@ export async function sendContactEmail(body: ContactRequest, env: ContactEmailEn
     <p>${escapeHtml(message || "No message added.").replace(/\n/g, "<br />")}</p>
   `;
 
-  let response: Response;
-
   try {
-    response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: env.CONTACT_FROM_EMAIL,
-        to: env.CONTACT_TO_EMAIL,
-        reply_to: email,
-        subject: `New ClipCraft request from ${name}`,
-        html,
-      }),
+    const mailjet = Mailjet.apiConnect(mailjetPublicKey, mailjetPrivateKey);
+
+    const response = await mailjet.post("send", { version: "v3.1" }).request({
+      Messages: [
+        {
+          From: {
+            Email: fromEmail,
+            Name: fromName,
+          },
+          To: [
+            {
+              Email: toEmail,
+              Name: toName,
+            },
+          ],
+          ReplyTo: {
+            Email: email,
+            Name: name,
+          },
+          Subject: `New Meeting Request from ${name}`,
+          HTMLPart: html,
+        },
+      ],
     });
+
+    return {
+      status: 200,
+      body: {
+        success: true,
+        ok: true,
+        response: response.body,
+      },
+    };
   } catch (error) {
-    console.error("Resend request failed:", error);
+    console.error("MAILJET ERROR:", error);
+    const message = getErrorMessage(error);
+
     return {
-      status: 502,
+      status: 500,
       body: {
-        error: "Could not connect to the email service. Please try again.",
+        success: false,
+        error: message,
+        message,
       },
     };
   }
-
-  if (!response.ok) {
-    const details = await response.text();
-    const resendMessage = getErrorMessage(details);
-
-    console.error("Resend email failed:", {
-      status: response.status,
-      statusText: response.statusText,
-      details,
-    });
-
-    return {
-      status: 502,
-      body: {
-        error: resendMessage ?? "Could not send your request right now. Please try again.",
-      },
-    };
-  }
-
-  return { status: 200, body: { ok: true } };
 }

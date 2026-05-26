@@ -26,9 +26,7 @@ function readJsonBody(req: import('node:http').IncomingMessage) {
   })
 }
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-
+export default defineConfig(() => {
   return {
     plugins: [
       react(),
@@ -52,6 +50,7 @@ export default defineConfig(({ mode }) => {
             }
 
             const body = await readJsonBody(req)
+            const env = loadEnv(server.config.mode, server.config.root, '')
             const result = await sendContactEmail(body, env)
             res.statusCode = result.status
             res.end(JSON.stringify(result.body))

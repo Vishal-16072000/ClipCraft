@@ -28,7 +28,14 @@ function sendJson(res: ServerResponse, status: number, body: Record<string, unkn
 function applyContactEnv(mode: string, root: string) {
   const env = loadEnv(mode, root, "");
 
-  for (const key of ["RESEND_API_KEY", "CONTACT_TO_EMAIL", "CONTACT_FROM_EMAIL"] as const) {
+  for (const key of [
+    "MJ_APIKEY_PUBLIC",
+    "MJ_APIKEY_PRIVATE",
+    "CONTACT_FROM_EMAIL",
+    "CONTACT_FROM_NAME",
+    "CONTACT_TO_EMAIL",
+    "CONTACT_TO_NAME",
+  ] as const) {
     if (env[key]) {
       process.env[key] = env[key];
     }
