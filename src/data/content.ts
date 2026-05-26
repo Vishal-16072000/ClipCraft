@@ -11,7 +11,7 @@ export const navbarCopy = {
   signIn: "Sign in",
   dashboard: "Dashboard",
   upload: "Upload",
-  cta: "Get My Editor",
+  cta: "Get in Touch",
 };
 
 export const heroContent = {
@@ -400,7 +400,7 @@ export const finalCta = {
   headline: "Stop editing. Start dominating the feed.",
   subheadline: "Reclaim 15+ hours a week. First edit in 48 hours.",
   perks: ["Free onboarding", "Cancel anytime"],
-  cta: "Claim Your Editor",
+  cta: "Schedule a Free Call",
   placeholder: "you@email.com",
   successTitle: "You're in.",
   successMessage: "We'll match your editor within 24 hours.",
