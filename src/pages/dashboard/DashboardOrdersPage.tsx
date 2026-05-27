@@ -36,6 +36,7 @@ export function DashboardOrdersPage() {
             </h1>
             <p className="mt-2 text-gray-400">{dashboardCopy.ordersSubtitle}</p>
           </div>
+          <div className="flex flex-row flex-wrap gap-3 mb-8 justify-center md:justify-start">
           <Link
             to="/dashboard/upload"
             className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold px-5 py-2.5 rounded-xl w-fit"
@@ -43,6 +44,7 @@ export function DashboardOrdersPage() {
             <Upload className="h-4 w-4" />
             {dashboardCopy.newUpload}
           </Link>
+          </div>
         </div>
 
         {orders.length > 0 && (

@@ -94,7 +94,7 @@ export function DashboardOverviewPage() {
           <p className="mt-2 text-gray-400">{dashboardCopy.subtitle}</p>
         </div>
 
-        <div className="flex flex-wrap gap-3 mb-8">
+        <div className="flex flex-wrap gap-3 mb-8 justify-center md:justify-start">
           <Link
             to="/dashboard/upload"
             className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-brand-600/25"
@@ -111,7 +111,7 @@ export function DashboardOverviewPage() {
           </Link>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             label={dashboardCopy.activeProjects}
             value={String(active)}
