@@ -8,6 +8,7 @@ import { HowItWorks } from "../components/sections/HowItWorks";
 import { Pricing } from "../components/sections/Pricing";
 import { Testimonials } from "../components/sections/Testimonials";
 import { Founder } from "../components/sections/Founder";
+import { About } from "../components/sections/About";
 import { FAQ } from "../components/sections/FAQ";
 import { FinalCTA } from "../components/sections/FinalCTA";
 
@@ -23,7 +24,8 @@ export function HomePage() {
         <HowItWorks />
         <Pricing />
         <Testimonials />
-        <Founder />
+        {/* <Founder /> */}
+        <About />
         <FAQ />
         <FinalCTA />
       </main>
