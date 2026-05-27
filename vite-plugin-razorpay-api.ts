@@ -1,10 +1,14 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { loadEnv, type Plugin } from "vite";
-import {
+
+const requireRazorpay = createRequire(fileURLToPath(import.meta.url));
+const {
   activateFreePlan,
   createPendingSubscriptionAndRazorpayOrder,
   verifyAndActivateSubscription,
-} from "./api/lib/razorpay";
+}: typeof import("./api/lib/razorpay.js") = requireRazorpay("./api/lib/razorpay.js");
 
 type JsonRecord = Record<string, unknown>;
 

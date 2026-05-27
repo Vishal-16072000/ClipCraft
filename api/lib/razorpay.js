@@ -1,71 +1,48 @@
-import { createHmac, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
-import type { SupabaseClient } from "@supabase/supabase-js";
+const { createHmac, timingSafeEqual: cryptoTimingSafeEqual } = require("node:crypto");
+const { createClient } = require("@supabase/supabase-js");
 
-type SupabaseModule = typeof import("@supabase/supabase-js");
-let supabaseModulePromise: Promise<SupabaseModule> | null = null;
-
-function loadSupabaseModule() {
-  if (!supabaseModulePromise) {
-    supabaseModulePromise = import("@supabase/supabase-js");
-  }
-  return supabaseModulePromise;
-}
-
-type BillingCycle = "monthly" | "yearly";
-
-type RazorpayPlanId = "starter" | "creator" | "pro" | "business";
-
-const PLAN_PRICES_INR: Record<RazorpayPlanId, { monthly: number; yearly: number | null }> = {
+/** @type {Record<string, { monthly: number; yearly: number | null }>} */
+const PLAN_PRICES_INR = {
   starter: { monthly: 999, yearly: 9999 },
   creator: { monthly: 1999, yearly: 19999 },
   pro: { monthly: 3499, yearly: 34999 },
   business: { monthly: 6999, yearly: null },
 };
 
-function parseBearerToken(authorizationHeader: string | undefined) {
+function parseBearerToken(authorizationHeader) {
   if (!authorizationHeader) return null;
   const parts = authorizationHeader.split(" ");
-  if (parts.length !== 2) return null;
-  if (parts[0] !== "Bearer") return null;
+  if (parts.length !== 2 || parts[0] !== "Bearer") return null;
   return parts[1] ?? null;
 }
 
-function addMonths(date: Date, months: number) {
+function addMonths(date, months) {
   const d = new Date(date.getTime());
-  const targetMonth = d.getMonth() + months;
-  d.setMonth(targetMonth);
+  d.setMonth(d.getMonth() + months);
   return d;
 }
 
-function getAmountInPaise(planId: RazorpayPlanId, billingCycle: BillingCycle) {
+function getAmountInPaise(planId, billingCycle) {
   const plan = PLAN_PRICES_INR[planId];
   const inr = billingCycle === "yearly" ? (plan.yearly ?? plan.monthly) : plan.monthly;
   return Math.round(inr * 100);
 }
 
-function timingSafeEqual(a: string, b: string) {
+function timingSafeEqual(a, b) {
   const aBuf = Buffer.from(a);
   const bBuf = Buffer.from(b);
   if (aBuf.length !== bBuf.length) return false;
   return cryptoTimingSafeEqual(aBuf, bBuf);
 }
 
-function verifyRazorpaySignature(params: {
-  secret: string;
-  razorpayOrderId: string;
-  razorpayPaymentId: string;
-  razorpaySignature: string;
-}) {
+function verifyRazorpaySignature(params) {
   const { secret, razorpayOrderId, razorpayPaymentId, razorpaySignature } = params;
   const payload = `${razorpayOrderId}|${razorpayPaymentId}`;
   const expected = createHmac("sha256", secret).update(payload).digest("hex");
   return timingSafeEqual(expected, razorpaySignature);
 }
 
-async function getSupabaseFromAccessToken(accessToken: string): Promise<{
-  supabase: SupabaseClient;
-  userId: string;
-}> {
+async function getSupabaseFromAccessToken(accessToken) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const supabaseAnonKey =
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
@@ -79,7 +56,6 @@ async function getSupabaseFromAccessToken(accessToken: string): Promise<{
     );
   }
 
-  const { createClient } = await loadSupabaseModule();
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: {
@@ -96,11 +72,7 @@ async function getSupabaseFromAccessToken(accessToken: string): Promise<{
   return { supabase, userId: data.user.id };
 }
 
-export async function createPendingSubscriptionAndRazorpayOrder(params: {
-  authorizationHeader: string | undefined;
-  planId: string;
-  billingCycle: string;
-}) {
+async function createPendingSubscriptionAndRazorpayOrder(params) {
   const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
   const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
 
@@ -113,11 +85,11 @@ export async function createPendingSubscriptionAndRazorpayOrder(params: {
     throw new Error("Missing Authorization bearer token.");
   }
 
-  const billingCycle = params.billingCycle as BillingCycle;
-  const planId = params.planId as RazorpayPlanId;
+  const billingCycle = params.billingCycle;
+  const planId = params.planId;
 
   const validBilling = billingCycle === "monthly" || billingCycle === "yearly";
-  const validPlan = planId in PLAN_PRICES_INR;
+  const validPlan = Object.prototype.hasOwnProperty.call(PLAN_PRICES_INR, planId);
   if (!validBilling || !validPlan) {
     throw new Error("Invalid plan/billingCycle.");
   }
@@ -125,8 +97,7 @@ export async function createPendingSubscriptionAndRazorpayOrder(params: {
   const { supabase, userId } = await getSupabaseFromAccessToken(accessToken);
 
   const planPricing = PLAN_PRICES_INR[planId];
-  // Business plan has no yearly price in our config, so treat "yearly" selection as monthly.
-  const effectiveBillingCycle: BillingCycle =
+  const effectiveBillingCycle =
     billingCycle === "yearly" && planPricing.yearly === null ? "monthly" : billingCycle;
 
   const now = new Date();
@@ -135,8 +106,7 @@ export async function createPendingSubscriptionAndRazorpayOrder(params: {
 
   const amountInPaise = getAmountInPaise(planId, effectiveBillingCycle);
   const currency = "INR";
-  // Razorpay `receipt` length is limited (commonly <= 40 chars). Keep it short & deterministic.
-  const receipt = `clipcraft_${planId}_${effectiveBillingCycle}_${String(now.getTime()).slice(-6)}`; // <= ~40 chars
+  const receipt = `clipcraft_${planId}_${effectiveBillingCycle}_${String(now.getTime()).slice(-6)}`;
 
   const basicAuth = Buffer.from(`${razorpayKeyId}:${razorpayKeySecret}`).toString("base64");
 
@@ -159,17 +129,11 @@ export async function createPendingSubscriptionAndRazorpayOrder(params: {
     }),
   });
 
-  type RazorpayCreateOrderResponse = { id?: string };
-  const razorpayOrderJson = (await razorpayOrderRes.json().catch(() => null)) as
-    | RazorpayCreateOrderResponse
-    | null;
+  const razorpayOrderJson = await razorpayOrderRes.json().catch(() => null);
 
   if (!razorpayOrderRes.ok || !razorpayOrderJson?.id) {
-    const razorpayErrorDescription =
-      (razorpayOrderJson as { error?: { description?: string } })?.error?.description ??
-      (razorpayOrderJson as { description?: string })?.description;
-
-    const razorpayError = typeof razorpayErrorDescription === "string" ? razorpayErrorDescription : null;
+    const razorpayError =
+      razorpayOrderJson?.error?.description ?? razorpayOrderJson?.description ?? null;
     throw new Error(
       `Razorpay order creation failed: ${razorpayOrderRes.status} ${razorpayOrderRes.statusText}${
         razorpayError ? ` — ${razorpayError}` : ""
@@ -203,12 +167,7 @@ export async function createPendingSubscriptionAndRazorpayOrder(params: {
   };
 }
 
-export async function verifyAndActivateSubscription(params: {
-  authorizationHeader: string | undefined;
-  razorpayOrderId: string;
-  razorpayPaymentId: string;
-  razorpaySignature: string;
-}) {
+async function verifyAndActivateSubscription(params) {
   const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!razorpayKeySecret) {
     throw new Error("Razorpay is not configured (missing RAZORPAY_KEY_SECRET).");
@@ -229,7 +188,7 @@ export async function verifyAndActivateSubscription(params: {
   });
 
   if (!ok) {
-    return { success: false as const, error: "Invalid Razorpay signature." };
+    return { success: false, error: "Invalid Razorpay signature." };
   }
 
   const { error: updateError } = await supabase
@@ -258,15 +217,13 @@ export async function verifyAndActivateSubscription(params: {
   }
 
   if (!updated) {
-    return { success: false as const, error: "Subscription not found." };
+    return { success: false, error: "Subscription not found." };
   }
 
-  return { success: true as const, subscription: updated };
+  return { success: true, subscription: updated };
 }
 
-export async function activateFreePlan(params: {
-  authorizationHeader: string | undefined;
-}) {
+async function activateFreePlan(params) {
   const accessToken = parseBearerToken(params.authorizationHeader);
   if (!accessToken) {
     throw new Error("Missing Authorization bearer token.");
@@ -285,11 +242,17 @@ export async function activateFreePlan(params: {
     .eq("plan_id", "free")
     .maybeSingle();
 
-  const existingEndMs =
-    existing?.current_period_end ? new Date(existing.current_period_end).getTime() : NaN;
+  const existingEndMs = existing?.current_period_end
+    ? new Date(existing.current_period_end).getTime()
+    : NaN;
 
-  if (existing && existing.status === "active" && Number.isFinite(existingEndMs) && existingEndMs > Date.now()) {
-    return { success: true as const, alreadyActive: true };
+  if (
+    existing &&
+    existing.status === "active" &&
+    Number.isFinite(existingEndMs) &&
+    existingEndMs > Date.now()
+  ) {
+    return { success: true, alreadyActive: true };
   }
 
   if (existing?.id) {
@@ -311,7 +274,7 @@ export async function activateFreePlan(params: {
       throw new Error(updateError.message);
     }
 
-    return { success: true as const, alreadyActive: false };
+    return { success: true, alreadyActive: false };
   }
 
   const { error: insertError } = await supabase.from("subscriptions").insert({
@@ -330,9 +293,11 @@ export async function activateFreePlan(params: {
     throw new Error(insertError.message);
   }
 
-  return { success: true as const, alreadyActive: false };
+  return { success: true, alreadyActive: false };
 }
 
-export const razorpayPlanIds = ["starter", "creator", "pro", "business"] as const;
-export type { BillingCycle, RazorpayPlanId };
-
+module.exports = {
+  createPendingSubscriptionAndRazorpayOrder,
+  verifyAndActivateSubscription,
+  activateFreePlan,
+};
