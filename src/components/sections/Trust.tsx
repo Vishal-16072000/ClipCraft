@@ -1,11 +1,9 @@
 import {
   trustMetrics,
   clientLogos,
-  testimonials,
   trustSection,
 } from "../../data/content";
 import { SectionHeader } from "../ui/SectionHeader";
-import { Quote, Star } from "lucide-react";
 
 export function Trust() {
   const logos = [...clientLogos, ...clientLogos];
@@ -48,7 +46,7 @@ export function Trust() {
           ))}
         </div>
 
-        <div className="mt-16 grid md:grid-cols-3 gap-6">
+        {/* <div className="mt-16 grid md:grid-cols-3 gap-6">
           {testimonials.slice(0, 3).map((t) => (
             <div
               key={t.name}
@@ -79,7 +77,7 @@ export function Trust() {
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
     </section>
   );

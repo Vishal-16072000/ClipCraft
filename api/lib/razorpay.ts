@@ -250,6 +250,75 @@ export async function verifyAndActivateSubscription(params: {
   return { success: true as const, subscription: updated };
 }
 
+export async function activateFreePlan(params: {
+  authorizationHeader: string | undefined;
+}) {
+  const accessToken = parseBearerToken(params.authorizationHeader);
+  if (!accessToken) {
+    throw new Error("Missing Authorization bearer token.");
+  }
+
+  const { supabase, userId } = await getSupabaseFromAccessToken(accessToken);
+
+  const now = new Date();
+  const currentPeriodEnd = addMonths(now, 1);
+  const razorpayOrderId = `free_${userId}`;
+
+  const { data: existing } = await supabase
+    .from("subscriptions")
+    .select("id, status, current_period_end")
+    .eq("user_id", userId)
+    .eq("plan_id", "free")
+    .maybeSingle();
+
+  const existingEndMs =
+    existing?.current_period_end ? new Date(existing.current_period_end).getTime() : NaN;
+
+  if (existing && existing.status === "active" && Number.isFinite(existingEndMs) && existingEndMs > Date.now()) {
+    return { success: true as const, alreadyActive: true };
+  }
+
+  if (existing?.id) {
+    const { error: updateError } = await supabase
+      .from("subscriptions")
+      .update({
+        billing_cycle: "monthly",
+        status: "active",
+        amount_in_paise: 0,
+        currency: "INR",
+        razorpay_order_id: razorpayOrderId,
+        current_period_start: now.toISOString(),
+        current_period_end: currentPeriodEnd.toISOString(),
+      })
+      .eq("id", existing.id)
+      .eq("user_id", userId);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    return { success: true as const, alreadyActive: false };
+  }
+
+  const { error: insertError } = await supabase.from("subscriptions").insert({
+    user_id: userId,
+    plan_id: "free",
+    billing_cycle: "monthly",
+    status: "active",
+    amount_in_paise: 0,
+    currency: "INR",
+    razorpay_order_id: razorpayOrderId,
+    current_period_start: now.toISOString(),
+    current_period_end: currentPeriodEnd.toISOString(),
+  });
+
+  if (insertError) {
+    throw new Error(insertError.message);
+  }
+
+  return { success: true as const, alreadyActive: false };
+}
+
 export const razorpayPlanIds = ["starter", "creator", "pro", "business"] as const;
 export type { BillingCycle, RazorpayPlanId };
 

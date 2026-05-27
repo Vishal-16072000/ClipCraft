@@ -14,6 +14,8 @@ import {
 import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
 import { useAuth } from "../contexts/AuthContext";
+import { activatePendingFreePlanIfNeeded } from "../lib/subscriptions";
+import { supabase } from "../lib/supabase";
 
 type AuthMode = "signin" | "signup" | "forgot";
 
@@ -46,7 +48,13 @@ export function SignInPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate(role === "editor" ? "/editor" : redirectTo, { replace: true });
+      void (async () => {
+        if (role !== "editor") {
+          await activatePendingFreePlanIfNeeded(user.id);
+          window.dispatchEvent(new Event("clipcraft_subscription_changed"));
+        }
+        navigate(role === "editor" ? "/editor" : redirectTo, { replace: true });
+      })();
     }
   }, [authLoading, role, user, navigate, redirectTo]);
 
@@ -89,6 +97,16 @@ export function SignInPage() {
       if (err) {
         setError(err);
       } else {
+        if (signedInRole !== "editor") {
+          const { data: sessionData } = supabase
+            ? await supabase.auth.getSession()
+            : { data: { session: null } };
+          const signedInUserId = sessionData.session?.user?.id;
+          if (signedInUserId) {
+            await activatePendingFreePlanIfNeeded(signedInUserId);
+            window.dispatchEvent(new Event("clipcraft_subscription_changed"));
+          }
+        }
         navigate(signedInRole === "editor" ? "/editor" : redirectTo, { replace: true });
       }
     } finally {

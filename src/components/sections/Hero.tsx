@@ -1,7 +1,40 @@
 import { ArrowRight, Play, Sparkles, Star, TrendingUp, UploadCloud, Wand2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { heroContent, heroMicrocopy, audienceTags } from "../../data/content";
+import { useAuth } from "../../contexts/AuthContext";
+import { useSubscription } from "../../hooks/useSubscription";
+import { setPendingFreePlanIntent } from "../../lib/subscriptions";
 
 export function Hero() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { subscription, loading: subscriptionLoading } = useSubscription();
+
+  const hasActivePlan = Boolean(subscription);
+  const showFreeCta = !user || !hasActivePlan;
+  const primaryCtaLabel = showFreeCta
+    ? heroContent.primaryCta
+    : heroContent.primaryCtaExisting;
+  const isCheckingPlan = Boolean(user) && subscriptionLoading;
+
+  function handlePrimaryCta() {
+    // Users with an active plan: dashboard only — never touch plan/localStorage.
+    if (user && hasActivePlan) {
+      navigate("/dashboard");
+      return;
+    }
+
+    // No plan (guest or logged-in): eligible for Free plan (2 videos).
+    setPendingFreePlanIntent();
+
+    if (user) {
+      navigate("/dashboard");
+      return;
+    }
+
+    navigate("/signin", { state: { from: "/dashboard" } });
+  }
+
   return (
     <section className="relative min-h-[100dvh] flex items-center pt-28 pb-16 sm:pb-24 overflow-hidden">
       <div className="absolute inset-0 -z-10 mesh-gradient" />
@@ -43,13 +76,15 @@ export function Hero() {
             </div>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4 animate-fade-up-delay-2">
-              <a
-                href="#pricing"
-                className="group inline-flex items-center justify-center gap-2 bg-white text-surface-900 font-bold px-8 py-4 rounded-2xl transition-all hover:bg-gray-100 shadow-[0_0_40px_-8px_rgba(255,255,255,0.4)]"
+              <button
+                type="button"
+                onClick={handlePrimaryCta}
+                disabled={isCheckingPlan}
+                className="group inline-flex items-center justify-center gap-2 bg-white text-surface-900 font-bold px-8 py-4 rounded-2xl transition-all hover:bg-gray-100 shadow-[0_0_40px_-8px_rgba(255,255,255,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {heroContent.primaryCta}
+                {primaryCtaLabel}
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-0.5 transition-transform" />
-              </a>
+              </button>
               <a
                 href="#portfolio"
                 className="inline-flex items-center justify-center gap-2 glass hover:bg-white/[0.08] text-white font-semibold px-8 py-4 rounded-2xl transition-all"

@@ -19,10 +19,11 @@ export const heroContent = {
   headline: "Stop Editing. ",
   headlineAccent: "Start Creating.",
   subheadline:
-    "Premium managed editing. One dedicated editor. Retention-first hooks. Delivered in 24–48 hours.",
-  primaryCta: "Get My Editor",
+    "Premium managed editing. One dedicated editor. Retention-first hooks. Delivered in 2–4 hours.",
+  primaryCta: "Get Started for Free",
+  primaryCtaExisting: "Get Started",
   secondaryCta: "See Viral Edits",
-  proofLine: "No contracts · Cancel anytime · First edit in 48hrs",
+  proofLine: "No contracts · Cancel anytime · First edit in 2 hrs",
 };
 
 export const heroMicrocopy = {
@@ -31,7 +32,7 @@ export const heroMicrocopy = {
   nextDelivery: "Next drop",
   editorStatus: "Reel #2 ready — hooks locked",
   reviewCta: "Review",
-  floatSpeed: "24–48hr",
+  floatSpeed: "2hr",
   floatSpeedLabel: "Ship daily",
   floatRetention: "+127%",
   floatRetentionLabel: "Retention lift",
@@ -49,7 +50,7 @@ export const trustSection = {
 };
 
 export const trustMetrics = [
-  { value: "2,400+", label: "Edits shipped" },
+  { value: "240+", label: "Edits shipped" },
   { value: "4.9/5", label: "Creator rated" },
   { value: "24hr", label: "Median delivery" },
   { value: "98%", label: "On-time" },
@@ -154,10 +155,10 @@ export const whyChooseUsSection = {
 
 export const whyChooseUs = [
   {
-    title: "Ship in 24–48 hours",
+    title: "Ship in 2–4 hours",
     description: "Pro: 12hr priority. Miss the deadline — next edit free.",
     icon: "zap" as const,
-    stat: "24–48hr",
+    stat: "2–4hr",
   },
   {
     title: "One editor. Your vibe.",
@@ -223,7 +224,7 @@ export const pricingSection = {
 export const pricingMicrocopy = {
   monthly: "Monthly",
   yearly: "Yearly",
-  yearlyBadge: "2 mo free",
+  yearlyBadge: "",
   popularBadge: "Most chosen",
 };
 
@@ -347,10 +348,10 @@ export const founderSection = {
 export const founder = {
   name: "Vishal Dhangar",
   title: "Founder & CEO",
-  bio: "Ex video lead at a top creator agency. I watched talent burn out in timelines — not from lack of ideas. ClipCraft exists so you stay on camera, not in post.",
+  bio: "I watched talent burn out in timelines — not from lack of ideas. ClipCraft exists so you stay on camera, not in post.",
   credentials: [
-    "8+ years post-production",
-    "50+ top Indian creators edited",
+    "3+ years post-production",
+    "50+ Indian creators edited",
     "Founder signs off on quality",
   ],
   avatar: "VD",

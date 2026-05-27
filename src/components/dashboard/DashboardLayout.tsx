@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   Play,
@@ -15,6 +15,8 @@ import {
 import { siteConfig } from "../../data/content";
 import { dashboardCopy, dashboardNav } from "../../data/dashboard";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSubscription } from "../../hooks/useSubscription";
+import { activatePendingFreePlanIfNeeded } from "../../lib/subscriptions";
 
 const navIcons = {
   layout: LayoutDashboard,
@@ -25,8 +27,11 @@ const navIcons = {
 
 export function DashboardLayout() {
   const { user, role, signOut } = useAuth();
+  const { subscription, loading: subscriptionLoading, refresh: refreshSubscription } =
+    useSubscription();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const activationAttemptKeyRef = useRef<string | null>(null);
 
   const displayName =
     user?.user_metadata?.full_name ??
@@ -44,6 +49,31 @@ export function DashboardLayout() {
     await signOut();
     navigate("/");
   }
+
+  useEffect(() => {
+    if (!user) return;
+    if (role === "editor" || role === "admin") return;
+    if (subscriptionLoading) return;
+    if (subscription) return;
+
+    const attemptKey = `${user.id}:free`;
+    if (activationAttemptKeyRef.current === attemptKey) return;
+    activationAttemptKeyRef.current = attemptKey;
+
+    (async () => {
+      const { activated, error } = await activatePendingFreePlanIfNeeded(user.id);
+      if (error) {
+        activationAttemptKeyRef.current = null;
+        console.error("[free-plan] activation failed:", error);
+        return;
+      }
+
+      if (activated) {
+        await refreshSubscription();
+        window.dispatchEvent(new Event("clipcraft_subscription_changed"));
+      }
+    })();
+  }, [role, refreshSubscription, subscription, subscriptionLoading, user]);
 
   const sidebar = (
     <>

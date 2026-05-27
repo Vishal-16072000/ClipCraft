@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { loadEnv, type Plugin } from "vite";
 import {
+  activateFreePlan,
   createPendingSubscriptionAndRazorpayOrder,
   verifyAndActivateSubscription,
 } from "./api/lib/razorpay";
@@ -53,8 +54,9 @@ export function razorpayApiDev(): Plugin {
 
         const isCreateOrder = pathname === "/api/razorpay/create-order";
         const isVerifyPayment = pathname === "/api/razorpay/verify-payment";
+        const isActivateFreePlan = pathname === "/api/activate-free-plan";
 
-        if (!isCreateOrder && !isVerifyPayment) {
+        if (!isCreateOrder && !isVerifyPayment && !isActivateFreePlan) {
           next();
           return;
         }
@@ -102,6 +104,12 @@ export function razorpayApiDev(): Plugin {
               return;
             }
 
+            sendJson(res, 200, result);
+            return;
+          }
+
+          if (isActivateFreePlan) {
+            const result = await activateFreePlan({ authorizationHeader });
             sendJson(res, 200, result);
             return;
           }

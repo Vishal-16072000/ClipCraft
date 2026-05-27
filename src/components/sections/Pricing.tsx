@@ -5,6 +5,7 @@ import { SectionHeader } from "../ui/SectionHeader";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { loadRazorpayCheckoutScript, type RazorpayCheckoutHandlerResponse } from "../../lib/razorpayCheckout";
+import { activateFreePlanForUser } from "../../lib/subscriptions";
 
 export function Pricing() {
   const [yearly, setYearly] = useState(false);
@@ -64,6 +65,23 @@ export function Pricing() {
         JSON.stringify({ planId, billingCycle: effectiveBillingCycle }),
       );
       navigate("/signin", { state: { from: "/#pricing" } });
+      return;
+    }
+
+    if (planId === "free") {
+      setCheckoutLoadingPlanId(planId);
+      try {
+        const result = await activateFreePlanForUser(user.id);
+        if (!result.success) {
+          throw new Error(result.error ?? "Could not activate free plan.");
+        }
+        window.dispatchEvent(new Event("clipcraft_subscription_changed"));
+        navigate("/dashboard");
+      } catch (e) {
+        setCheckoutError(e instanceof Error ? e.message : "Could not activate free plan.");
+      } finally {
+        setCheckoutLoadingPlanId(null);
+      }
       return;
     }
 

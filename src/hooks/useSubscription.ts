@@ -28,6 +28,18 @@ export function useSubscription() {
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onChanged = () => {
+      refresh();
+    };
+
+    window.addEventListener("clipcraft_subscription_changed", onChanged);
+    return () => {
+      window.removeEventListener("clipcraft_subscription_changed", onChanged);
+    };
+  }, [refresh]);
+
   return { subscription, loading, error, refresh };
 }
 
