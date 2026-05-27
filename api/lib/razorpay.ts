@@ -1,5 +1,15 @@
-import crypto from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
+import { createHmac, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+type SupabaseModule = typeof import("@supabase/supabase-js");
+let supabaseModulePromise: Promise<SupabaseModule> | null = null;
+
+function loadSupabaseModule() {
+  if (!supabaseModulePromise) {
+    supabaseModulePromise = import("@supabase/supabase-js");
+  }
+  return supabaseModulePromise;
+}
 
 type BillingCycle = "monthly" | "yearly";
 
@@ -37,7 +47,7 @@ function timingSafeEqual(a: string, b: string) {
   const aBuf = Buffer.from(a);
   const bBuf = Buffer.from(b);
   if (aBuf.length !== bBuf.length) return false;
-  return crypto.timingSafeEqual(aBuf, bBuf);
+  return cryptoTimingSafeEqual(aBuf, bBuf);
 }
 
 function verifyRazorpaySignature(params: {
@@ -48,11 +58,14 @@ function verifyRazorpaySignature(params: {
 }) {
   const { secret, razorpayOrderId, razorpayPaymentId, razorpaySignature } = params;
   const payload = `${razorpayOrderId}|${razorpayPaymentId}`;
-  const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  const expected = createHmac("sha256", secret).update(payload).digest("hex");
   return timingSafeEqual(expected, razorpaySignature);
 }
 
-async function getSupabaseFromAccessToken(accessToken: string) {
+async function getSupabaseFromAccessToken(accessToken: string): Promise<{
+  supabase: SupabaseClient;
+  userId: string;
+}> {
   const supabaseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const supabaseAnonKey =
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
@@ -66,6 +79,7 @@ async function getSupabaseFromAccessToken(accessToken: string) {
     );
   }
 
+  const { createClient } = await loadSupabaseModule();
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: {

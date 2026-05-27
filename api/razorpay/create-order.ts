@@ -65,7 +65,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ success: true, ...result });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Could not create order.";
-    res.status(500).json({ success: false, error: message });
+    console.error("[create-order]", e);
+    const status =
+      message.startsWith("Razorpay order creation failed") ||
+      message.startsWith("Missing ") ||
+      message.startsWith("Invalid ")
+        ? 400
+        : 500;
+    res.status(status).json({ success: false, error: message });
   }
 }
 

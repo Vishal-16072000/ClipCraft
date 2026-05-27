@@ -122,7 +122,12 @@ export function Pricing() {
         !createJson.keyId
       ) {
         const statusHint = createRes.ok ? "" : ` (HTTP ${createRes.status})`;
-        throw new Error(createJson?.error ?? (createText ? `Could not start Razorpay checkout${statusHint}.` : `Could not start Razorpay checkout${statusHint}.`));
+        const serverMessage =
+          createJson?.error ??
+          (createText.includes("FUNCTION_INVOCATION_FAILED")
+            ? "Payment server error. Please try again in a minute or contact support."
+            : null);
+        throw new Error(serverMessage ?? `Could not start Razorpay checkout${statusHint}.`);
       }
 
       await loadRazorpayCheckoutScript();
