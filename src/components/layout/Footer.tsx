@@ -55,7 +55,7 @@ export function Footer() {
             </h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li>
-                <a href="/#founder" className="hover:text-white transition-colors">
+                <a href="/#about" className="hover:text-white transition-colors">
                   About
                 </a>
               </li>
