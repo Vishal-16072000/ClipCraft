@@ -274,22 +274,46 @@ export function Pricing() {
               <div className="mt-6 pb-6 border-b border-white/10">
                 {plan.yearlyPrice && yearly ? (
                   <>
-                    <div className="flex items-baseline gap-1">
+                    <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="font-display text-4xl font-bold text-white tracking-tight">
                         ₹{Math.round(plan.yearlyPrice / 12).toLocaleString("en-IN")}
                       </span>
                       <span className="text-gray-500 text-sm">/mo</span>
+                      {plan.originalYearlyPrice > plan.yearlyPrice && (
+                        <span className="text-lg text-gray-500 line-through">
+                          ₹
+                          {Math.round(plan.originalYearlyPrice / 12).toLocaleString(
+                            "en-IN",
+                          )}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      ₹{plan.yearlyPrice.toLocaleString("en-IN")}/yr billed annually
+                      {plan.originalYearlyPrice > plan.yearlyPrice ? (
+                        <>
+                          <span>
+                            ₹{plan.yearlyPrice.toLocaleString("en-IN")}/yr billed annually
+                          </span>{" "}
+                          <span className="line-through text-gray-600">
+                            ₹{plan.originalYearlyPrice.toLocaleString("en-IN")}
+                          </span>
+                        </>
+                      ) : (
+                        <>₹{plan.yearlyPrice.toLocaleString("en-IN")}/yr billed annually</>
+                      )}
                     </p>
                   </>
                 ) : (
-                  <div className="flex items-baseline gap-1">
+                  <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="font-display text-4xl font-bold text-white tracking-tight">
                       ₹{plan.price.toLocaleString("en-IN")}
                     </span>
                     <span className="text-gray-500 text-sm">/mo</span>
+                    {plan.originalPrice > plan.price && (
+                      <span className="text-lg text-gray-500 line-through">
+                        ₹{plan.originalPrice.toLocaleString("en-IN")}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
