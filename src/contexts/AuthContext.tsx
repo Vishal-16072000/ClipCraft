@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { getSiteUrl } from "../lib/siteUrl";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
 type AppRole = "user" | "admin" | "editor";
@@ -281,7 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${getSiteUrl()}/dashboard`,
       },
     });
     return { error: error ? formatAuthError(error.message) : null };
@@ -293,7 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${getSiteUrl()}/dashboard` },
     });
     return { error: error ? formatAuthError(error.message) : null };
   }, []);
@@ -303,7 +304,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: "Supabase is not configured. Add your env keys and restart the dev server." };
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/signin`,
+      redirectTo: `${getSiteUrl()}/signin`,
     });
     return { error: error ? formatAuthError(error.message) : null };
   }, []);
