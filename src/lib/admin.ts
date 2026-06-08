@@ -71,7 +71,8 @@ type AdminOrderRpcRow = {
     id: string;
     name: string;
     size_bytes: number;
-    storage_path: string;
+    storage_path: string | null;
+    drive_url: string | null;
     editor_id: string | null;
     review_status: "pending" | "satisfied" | "changes_requested";
     client_comment: string | null;
@@ -130,7 +131,8 @@ function mapAdminOrderRpc(row: AdminOrderRpcRow): AdminOrder {
       id: video.id,
       name: video.name,
       size: Number(video.size_bytes),
-      storagePath: video.storage_path,
+      storagePath: video.storage_path ?? undefined,
+      driveUrl: video.drive_url ?? undefined,
       editorId: video.editor_id ?? undefined,
       reviewStatus: video.review_status,
       clientComment: video.client_comment ?? undefined,

@@ -15,7 +15,8 @@ export type EditedVideo = {
   id: string;
   name: string;
   size: number;
-  storagePath: string;
+  storagePath?: string;
+  driveUrl?: string;
   editorId?: string;
   reviewStatus: "pending" | "satisfied" | "changes_requested";
   clientComment?: string;
@@ -57,7 +58,8 @@ type OrderRow = {
     id: string;
     name: string;
     size_bytes: number;
-    storage_path: string;
+    storage_path: string | null;
+    drive_url: string | null;
     editor_id: string | null;
     review_status: "pending" | "satisfied" | "changes_requested";
     client_comment: string | null;
@@ -87,6 +89,7 @@ export const ORDER_SELECT_WITH_FOOTAGE = `
     name,
     size_bytes,
     storage_path,
+    drive_url,
     editor_id,
     review_status,
     client_comment,
@@ -145,7 +148,8 @@ export function mapOrder(row: OrderRow): Order {
       id: video.id,
       name: video.name,
       size: Number(video.size_bytes),
-      storagePath: video.storage_path,
+      storagePath: video.storage_path ?? undefined,
+      driveUrl: video.drive_url ?? undefined,
       editorId: video.editor_id ?? undefined,
       reviewStatus: video.review_status,
       clientComment: video.client_comment ?? undefined,

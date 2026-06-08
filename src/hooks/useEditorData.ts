@@ -3,6 +3,7 @@ import {
   fetchEditorClients,
   fetchEditorOrders,
   updateEditorOrderStatus,
+  submitEditedVideoDriveLink,
   uploadEditedVideo,
   type EditorClient,
   type EditorOrder,
@@ -78,5 +79,31 @@ export function useEditorWorkspace(accessToken?: string) {
     [accessToken, refresh],
   );
 
-  return { clients, orders, loading, error, refresh, updateStatus, uploadEdit };
+  const submitEditDriveLink = useCallback(
+    async (orderId: string, driveUrl: string) => {
+      if (!accessToken) {
+        return { error: "Editor session is missing. Please sign in again." };
+      }
+
+      const result = await submitEditedVideoDriveLink(accessToken, orderId, driveUrl);
+
+      if (!result.error) {
+        await refresh();
+      }
+
+      return result;
+    },
+    [accessToken, refresh],
+  );
+
+  return {
+    clients,
+    orders,
+    loading,
+    error,
+    refresh,
+    updateStatus,
+    uploadEdit,
+    submitEditDriveLink,
+  };
 }

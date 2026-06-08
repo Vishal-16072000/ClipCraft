@@ -7,6 +7,7 @@ import {
   ExternalLink,
   FileVideo,
   FolderOpen,
+  Link2,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -491,6 +492,11 @@ export function EditorSpacePage() {
                           ? async () => ({ error: "Sign in as an editor to upload edited videos." })
                           : editorWorkspace.uploadEdit
                       }
+                      onSubmitEditDriveLink={
+                        isAdminView
+                          ? async () => ({ error: "Sign in as an editor to submit edited videos." })
+                          : editorWorkspace.submitEditDriveLink
+                      }
                     />
                   ))}
                 </div>
@@ -524,26 +530,42 @@ function Stat({
   );
 }
 
+function isGoogleDriveUrl(url: string) {
+  if (!url.trim()) return true;
+
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return host === "drive.google.com" || host === "docs.google.com";
+  } catch {
+    return false;
+  }
+}
+
 function EditorOrderCard({
   order,
   updating,
   onStatusChange,
   onUploadEdit,
+  onSubmitEditDriveLink,
 }: {
   order: EditorOrder;
   updating: boolean;
   onStatusChange: (orderId: string, status: OrderStatus) => void;
   onUploadEdit: (orderId: string, file: File) => Promise<{ error: string | null }>;
+  onSubmitEditDriveLink: (orderId: string, driveUrl: string) => Promise<{ error: string | null }>;
 }) {
   const [uploadingEdit, setUploadingEdit] = useState(false);
+  const [submittingDriveLink, setSubmittingDriveLink] = useState(false);
+  const [driveLinkUrl, setDriveLinkUrl] = useState("");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const canDeliver = order.editedVideos.some((video) => video.reviewStatus === "satisfied");
+  const submittingEditedVideo = uploadingEdit || submittingDriveLink;
 
   async function handleEditedVideoUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
 
-    if (!file || uploadingEdit) return;
+    if (!file || submittingEditedVideo) return;
 
     setUploadError(null);
     setUploadingEdit(true);
@@ -553,6 +575,30 @@ function EditorOrderCard({
     if (result.error) {
       setUploadError(result.error);
     }
+  }
+
+  async function handleDriveLinkSubmit(event: React.FormEvent) {
+    event.preventDefault();
+
+    const cleanDriveUrl = driveLinkUrl.trim();
+    if (!cleanDriveUrl || submittingEditedVideo) return;
+
+    if (!isGoogleDriveUrl(cleanDriveUrl)) {
+      setUploadError("Please add a valid Google Drive link.");
+      return;
+    }
+
+    setUploadError(null);
+    setSubmittingDriveLink(true);
+    const result = await onSubmitEditDriveLink(order.id, cleanDriveUrl);
+    setSubmittingDriveLink(false);
+
+    if (result.error) {
+      setUploadError(result.error);
+      return;
+    }
+
+    setDriveLinkUrl("");
   }
 
   return (
@@ -651,7 +697,7 @@ function EditorOrderCard({
           </div>
           <label
             className={`inline-flex w-fit items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors ${
-              uploadingEdit
+              submittingEditedVideo
                 ? "cursor-not-allowed bg-white/5 text-gray-500"
                 : "cursor-pointer bg-brand-600/20 text-brand-300 hover:bg-brand-600/30 hover:text-white"
             }`}
@@ -665,12 +711,57 @@ function EditorOrderCard({
             <input
               type="file"
               accept="video/*"
-              disabled={uploadingEdit}
+              disabled={submittingEditedVideo}
               className="hidden"
               onChange={handleEditedVideoUpload}
             />
           </label>
         </div>
+
+        <div className="my-5 flex items-center gap-4">
+          <div className="h-px flex-1 bg-white/10" />
+          <span className="rounded-full border border-white/10 bg-surface-800 px-4 py-1 text-xs font-bold uppercase tracking-wide text-gray-400">
+            OR
+          </span>
+          <div className="h-px flex-1 bg-white/10" />
+        </div>
+
+        <form onSubmit={handleDriveLinkSubmit} className="mx-auto max-w-xl">
+          <label
+            htmlFor={`edited-drive-link-${order.id}`}
+            className="mb-2 flex items-center justify-center gap-2 text-sm font-medium text-white"
+          >
+            <Link2 className="h-4 w-4 text-brand-400" />
+            Google Drive link
+          </label>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              id={`edited-drive-link-${order.id}`}
+              type="url"
+              disabled={submittingEditedVideo}
+              value={driveLinkUrl}
+              onChange={(event) => setDriveLinkUrl(event.target.value)}
+              placeholder="https://drive.google.com/file/d/..."
+              className="w-full rounded-xl border border-white/10 bg-surface-800/60 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={submittingEditedVideo || !driveLinkUrl.trim()}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-600/20 px-4 py-2.5 text-xs font-semibold text-brand-300 transition-colors hover:bg-brand-600/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submittingDriveLink ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4" />
+              )}
+              {submittingDriveLink ? "Submitting..." : "Submit Drive link"}
+            </button>
+          </div>
+          <p className="mt-2 text-center text-xs text-gray-500">
+            Paste a Google Drive video link if you are not uploading the file here.
+          </p>
+        </form>
+
         {uploadError && (
           <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
             {uploadError}
@@ -723,66 +814,102 @@ function ReviewStatusBadge({ status }: { status: EditedVideo["reviewStatus"] }) 
   );
 }
 
-function EditorVideoClip({ file, children }: { file: OrderFile; children?: ReactNode }) {
+type VideoClipSource = OrderFile | EditedVideo;
+
+function EditorVideoClip({ file, children }: { file: VideoClipSource; children?: ReactNode }) {
   const [preview, setPreview] = useState<{
     storagePath: string;
     signedUrl: string | null;
   } | null>(null);
-  const loading = preview?.storagePath !== file.storagePath;
-  const signedUrl = loading ? null : preview.signedUrl;
+  const driveUrl = "driveUrl" in file ? file.driveUrl : undefined;
+  const storagePath = file.storagePath;
+  const loading = Boolean(storagePath) && preview?.storagePath !== storagePath;
+  const signedUrl = loading ? null : preview?.signedUrl;
 
   useEffect(() => {
+    if (!storagePath) {
+      return;
+    }
+
     let cancelled = false;
 
-    getSignedFileUrl(file.storagePath).then((url) => {
+    getSignedFileUrl(storagePath).then((url) => {
       if (cancelled) return;
-      setPreview({ storagePath: file.storagePath, signedUrl: url });
+      setPreview({ storagePath, signedUrl: url });
     });
 
     return () => {
       cancelled = true;
     };
-  }, [file.storagePath]);
+  }, [storagePath]);
 
   return (
     <li className="overflow-hidden rounded-2xl border border-white/10 bg-surface-800/60">
-      <div className="relative aspect-video bg-black">
-        {loading ? (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : signedUrl ? (
-          <video
-            src={signedUrl}
-            controls
-            preload="metadata"
-            className="h-full w-full object-contain"
-          >
-            Your browser does not support video playback.
-          </video>
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-gray-500">
-            <PlayCircle className="h-7 w-7 text-gray-600" />
-            Preview unavailable
-          </div>
-        )}
-      </div>
+      {driveUrl ? (
+        <a
+          href={driveUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex aspect-video flex-col items-center justify-center gap-3 bg-surface-900/80 px-4 text-center transition-colors hover:bg-surface-900"
+        >
+          <Link2 className="h-8 w-8 text-brand-300" />
+          <span className="text-sm font-medium text-white">Open edited video on Google Drive</span>
+          <span className="line-clamp-2 text-xs text-gray-500">{driveUrl}</span>
+        </a>
+      ) : (
+        <div className="relative aspect-video bg-black">
+          {loading ? (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : signedUrl ? (
+            <video
+              src={signedUrl}
+              controls
+              preload="metadata"
+              className="h-full w-full object-contain"
+            >
+              Your browser does not support video playback.
+            </video>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-gray-500">
+              <PlayCircle className="h-7 w-7 text-gray-600" />
+              Preview unavailable
+            </div>
+          )}
+        </div>
+      )}
       <div className="flex items-center gap-3 px-4 py-3">
         <FileVideo className="h-5 w-5 shrink-0 text-brand-300" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-white">{file.name}</p>
-          <p className="text-xs text-gray-500">{formatSize(file.size)}</p>
+          <p className="text-xs text-gray-500">
+            {driveUrl ? "Google Drive link" : formatSize(file.size)}
+          </p>
         </div>
-        {signedUrl && (
+        {driveUrl ? (
           <a
-            href={signedUrl}
-            download={file.name}
+            href={driveUrl}
+            target="_blank"
+            rel="noreferrer"
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-brand-500/10 hover:text-brand-200"
-            aria-label={`Download ${file.name}`}
-            title="Download original clip"
+            aria-label="Open Google Drive link"
+            title="Open Google Drive link"
           >
-            <Download className="h-4 w-4" />
+            <ExternalLink className="h-4 w-4" />
           </a>
+        ) : (
+          signedUrl && (
+            <a
+              href={signedUrl}
+              download={file.name}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-brand-500/10 hover:text-brand-200"
+              aria-label={`Download ${file.name}`}
+              title="Download original clip"
+            >
+              <Download className="h-4 w-4" />
+            </a>
+          )
         )}
       </div>
       {children && <div className="px-4 pb-4">{children}</div>}

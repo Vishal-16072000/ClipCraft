@@ -54,7 +54,8 @@ type EditorOrderRow = {
     id: string;
     name: string;
     size_bytes: number;
-    storage_path: string;
+    storage_path: string | null;
+    drive_url: string | null;
     editor_id: string | null;
     review_status: "pending" | "satisfied" | "changes_requested";
     client_comment: string | null;
@@ -95,7 +96,8 @@ function mapEditorOrder(row: EditorOrderRow): EditorOrder {
       id: video.id,
       name: video.name,
       size: Number(video.size_bytes),
-      storagePath: video.storage_path,
+      storagePath: video.storage_path ?? undefined,
+      driveUrl: video.drive_url ?? undefined,
       editorId: video.editor_id ?? undefined,
       reviewStatus: video.review_status,
       clientComment: video.client_comment ?? undefined,
@@ -199,4 +201,22 @@ export async function uploadEditedVideo(
   }
 
   return { error: null };
+}
+
+export async function submitEditedVideoDriveLink(
+  accessToken: string,
+  orderId: string,
+  driveUrl: string,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const { error } = await supabase.rpc("editor_add_edited_video_drive_link", {
+    editor_token: accessToken,
+    target_order_id: orderId,
+    video_drive_url: driveUrl.trim(),
+  });
+
+  return { error: error?.message ?? null };
 }

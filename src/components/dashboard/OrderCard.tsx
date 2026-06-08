@@ -6,6 +6,7 @@ import {
   Clock,
   FolderOpen,
   Loader2,
+  Link2,
   PlayCircle,
   Plus,
   Trash2,
@@ -141,15 +142,22 @@ function EditedVideoReview({
   const [comment, setComment] = useState(video.clientComment ?? "");
   const [reviewing, setReviewing] = useState<"satisfied" | "changes_requested" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const loading = preview?.storagePath !== video.storagePath;
-  const signedUrl = loading ? null : preview.signedUrl;
+  const loading = Boolean(video.storagePath) && preview?.storagePath !== video.storagePath;
+  const signedUrl = loading ? null : preview?.signedUrl;
 
   useEffect(() => {
+    if (!video.storagePath) {
+      return;
+    }
+
     let cancelled = false;
 
-    getSignedFileUrl(video.storagePath).then((url) => {
+    const storagePath = video.storagePath;
+    if (!storagePath) return;
+
+    getSignedFileUrl(storagePath).then((url) => {
       if (cancelled) return;
-      setPreview({ storagePath: video.storagePath, signedUrl: url });
+      setPreview({ storagePath, signedUrl: url });
     });
 
     return () => {
@@ -173,27 +181,41 @@ function EditedVideoReview({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-surface-700/50">
-      <div className="relative aspect-video bg-black">
-        {loading ? (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : signedUrl ? (
-          <video src={signedUrl} controls preload="metadata" className="h-full w-full object-contain">
-            Your browser does not support video playback.
-          </video>
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-gray-500">
-            <PlayCircle className="h-7 w-7 text-gray-600" />
-            Preview unavailable
-          </div>
-        )}
-      </div>
+      {video.driveUrl ? (
+        <a
+          href={video.driveUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex aspect-video flex-col items-center justify-center gap-3 bg-surface-900/80 px-4 text-center transition-colors hover:bg-surface-900"
+        >
+          <Link2 className="h-8 w-8 text-brand-400" />
+          <span className="text-sm font-medium text-white">Open edited video on Google Drive</span>
+          <span className="line-clamp-2 text-xs text-gray-500">{video.driveUrl}</span>
+        </a>
+      ) : (
+        <div className="relative aspect-video bg-black">
+          {loading ? (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : signedUrl ? (
+            <video src={signedUrl} controls preload="metadata" className="h-full w-full object-contain">
+              Your browser does not support video playback.
+            </video>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center text-xs text-gray-500">
+              <PlayCircle className="h-7 w-7 text-gray-600" />
+              Preview unavailable
+            </div>
+          )}
+        </div>
+      )}
       <div className="space-y-3 px-4 py-3">
         <div>
           <p className="truncate text-sm font-medium text-white">{video.name}</p>
           <p className="text-xs text-gray-500">
-            {formatSize(video.size)} · {video.reviewStatus.replace("_", " ")}
+            {video.driveUrl ? "Google Drive link" : formatSize(video.size)} ·{" "}
+            {video.reviewStatus.replace("_", " ")}
           </p>
         </div>
         <textarea
