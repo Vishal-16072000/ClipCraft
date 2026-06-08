@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check } from "lucide-react";
 import { pricingPlans, pricingSection, pricingMicrocopy } from "../../data/content";
+import { usePricingRegion } from "../../hooks/usePricingRegion";
+import { formatPlanAmount, getPlanPrices } from "../../lib/pricing";
 import { SectionHeader } from "../ui/SectionHeader";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +11,7 @@ import { activateFreePlanForUser } from "../../lib/subscriptions";
 
 export function Pricing() {
   const [yearly, setYearly] = useState(false);
+  const { currency, loading: regionLoading } = usePricingRegion();
   const navigate = useNavigate();
   const { user, session } = useAuth();
   const [checkoutLoadingPlanId, setCheckoutLoadingPlanId] = useState<string | null>(null);
@@ -91,6 +94,15 @@ export function Pricing() {
       return;
     }
 
+    if (currency === "EUR") {
+      if (!plan.paypalUrl) {
+        setCheckoutError("Payment link not available for this plan.");
+        return;
+      }
+      window.open(plan.paypalUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
     setCheckoutLoadingPlanId(planId);
     try {
       const createRes = await fetch("/api/razorpay/create-order", {
@@ -168,7 +180,7 @@ export function Pricing() {
   }
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || regionLoading) return;
 
     try {
       const raw = localStorage.getItem("clipcraft_pending_subscription");
@@ -194,7 +206,7 @@ export function Pricing() {
       // ignore
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, regionLoading]);
 
   return (
     <section id="pricing" className="section-padding bg-surface-900/40">
@@ -245,7 +257,12 @@ export function Pricing() {
               {checkoutError}
             </div>
           )}
-          {pricingPlans.map((plan) => (
+          {pricingPlans.map((plan) => {
+            const prices = getPlanPrices(plan, currency);
+            const formatAmount = (amount: number) =>
+              formatPlanAmount(amount, prices.locale);
+
+            return (
             <div
               key={plan.id}
               className={`relative rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-300 ${
@@ -276,42 +293,48 @@ export function Pricing() {
                   <>
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="font-display text-4xl font-bold text-white tracking-tight">
-                        ₹{Math.round(plan.yearlyPrice / 12).toLocaleString("en-IN")}
+                        {prices.symbol}
+                        {formatAmount(Math.round(prices.yearlyPrice / 12))}
                       </span>
                       <span className="text-gray-500 text-sm">/mo</span>
-                      {plan.originalYearlyPrice > plan.yearlyPrice && (
+                      {prices.originalYearlyPrice > prices.yearlyPrice && (
                         <span className="text-lg text-gray-500 line-through">
-                          ₹
-                          {Math.round(plan.originalYearlyPrice / 12).toLocaleString(
-                            "en-IN",
-                          )}
+                          {prices.symbol}
+                          {formatAmount(Math.round(prices.originalYearlyPrice / 12))}
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      {plan.originalYearlyPrice > plan.yearlyPrice ? (
+                      {prices.originalYearlyPrice > prices.yearlyPrice ? (
                         <>
                           <span>
-                            ₹{plan.yearlyPrice.toLocaleString("en-IN")}/yr billed annually
+                            {prices.symbol}
+                            {formatAmount(prices.yearlyPrice)}/yr billed annually
                           </span>{" "}
                           <span className="line-through text-gray-600">
-                            ₹{plan.originalYearlyPrice.toLocaleString("en-IN")}
+                            {prices.symbol}
+                            {formatAmount(prices.originalYearlyPrice)}
                           </span>
                         </>
                       ) : (
-                        <>₹{plan.yearlyPrice.toLocaleString("en-IN")}/yr billed annually</>
+                        <>
+                          {prices.symbol}
+                          {formatAmount(prices.yearlyPrice)}/yr billed annually
+                        </>
                       )}
                     </p>
                   </>
                 ) : (
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="font-display text-4xl font-bold text-white tracking-tight">
-                      ₹{plan.price.toLocaleString("en-IN")}
+                      {prices.symbol}
+                      {formatAmount(prices.price)}
                     </span>
                     <span className="text-gray-500 text-sm">/mo</span>
-                    {plan.originalPrice > plan.price && (
+                    {prices.originalPrice > prices.price && (
                       <span className="text-lg text-gray-500 line-through">
-                        ₹{plan.originalPrice.toLocaleString("en-IN")}
+                        {prices.symbol}
+                        {formatAmount(prices.originalPrice)}
                       </span>
                     )}
                   </div>
@@ -340,7 +363,8 @@ export function Pricing() {
                 {checkoutLoadingPlanId === plan.id ? "Processing..." : plan.cta}
               </button>
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
     </section>

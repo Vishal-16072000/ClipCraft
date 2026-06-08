@@ -33,6 +33,28 @@ export default defineConfig(() => {
       react(),
       tailwindcss(),
       {
+        name: 'clipcraft-geo-api',
+        configureServer(server) {
+          server.middlewares.use('/api/geo', (req, res) => {
+            res.setHeader('Content-Type', 'application/json')
+
+            if (req.method === 'OPTIONS') {
+              res.statusCode = 204
+              res.end()
+              return
+            }
+
+            if (req.method !== 'GET') {
+              res.statusCode = 405
+              res.end(JSON.stringify({ error: 'Method not allowed.' }))
+              return
+            }
+
+            res.end(JSON.stringify({ country: 'IN' }))
+          })
+        },
+      },
+      {
         name: 'clipcraft-contact-api',
         configureServer(server) {
           server.middlewares.use('/api/contact', async (req, res) => {
