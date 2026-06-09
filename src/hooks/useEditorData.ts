@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchEditorClients,
   fetchEditorOrders,
@@ -15,6 +15,11 @@ export function useEditorWorkspace(accessToken?: string) {
   const [orders, setOrders] = useState<EditorOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    hasLoadedRef.current = false;
+  }, [accessToken]);
 
   const refresh = useCallback(async () => {
     if (!accessToken) {
@@ -22,10 +27,14 @@ export function useEditorWorkspace(accessToken?: string) {
       setOrders([]);
       setError("Editor session is missing. Please sign in again.");
       setLoading(false);
+      hasLoadedRef.current = false;
       return;
     }
 
-    setLoading(true);
+    if (!hasLoadedRef.current) {
+      setLoading(true);
+    }
+
     const [clientsResult, ordersResult] = await Promise.all([
       fetchEditorClients(accessToken),
       fetchEditorOrders(accessToken),
@@ -35,6 +44,7 @@ export function useEditorWorkspace(accessToken?: string) {
     setOrders(ordersResult.orders);
     setError(clientsResult.error ?? ordersResult.error);
     setLoading(false);
+    hasLoadedRef.current = true;
   }, [accessToken]);
 
   useEffect(() => {

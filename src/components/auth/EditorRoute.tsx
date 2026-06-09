@@ -6,7 +6,7 @@ export function EditorRoute({ children }: { children: React.ReactNode }) {
   const { user, role, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loading && !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface-950">
         <Loader2 className="h-8 w-8 animate-spin text-brand-400" />

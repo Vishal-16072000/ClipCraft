@@ -180,6 +180,8 @@ export function EditorSpacePage() {
   const activeOrders = orders.filter((order) => order.status !== "done").length;
   const reviewOrders = orders.filter((order) => order.status === "review").length;
   const deliveredOrders = orders.filter((order) => order.status === "done").length;
+  const showClientsLoading = loading && clients.length === 0;
+  const showWorkspaceLoading = loading && orders.length === 0;
 
   async function handleSignOut() {
     await signOut();
@@ -336,7 +338,7 @@ export function EditorSpacePage() {
                 </p>
               </div>
 
-              {loading ? (
+              {showClientsLoading ? (
                 <div className="glass rounded-3xl p-12 text-center text-gray-400">
                   <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-brand-400" />
                   Loading clients...
@@ -464,7 +466,7 @@ export function EditorSpacePage() {
                 <div className="glass rounded-3xl p-12 text-center text-gray-500">
                   Select a client to open their workspace.
                 </div>
-              ) : loading ? (
+              ) : showWorkspaceLoading ? (
                 <div className="glass rounded-3xl p-12 text-center text-gray-400">
                   <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-brand-400" />
                   Loading editor workspace...
@@ -541,6 +543,31 @@ function isGoogleDriveUrl(url: string) {
   }
 }
 
+function editedDriveLinkDraftKey(orderId: string) {
+  return `clipcraft:edited-drive-link:${orderId}`;
+}
+
+function readEditedDriveLinkDraft(orderId: string) {
+  try {
+    return sessionStorage.getItem(editedDriveLinkDraftKey(orderId)) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function writeEditedDriveLinkDraft(orderId: string, value: string) {
+  try {
+    const key = editedDriveLinkDraftKey(orderId);
+    if (value.trim()) {
+      sessionStorage.setItem(key, value);
+    } else {
+      sessionStorage.removeItem(key);
+    }
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
 function EditorOrderCard({
   order,
   updating,
@@ -556,8 +583,13 @@ function EditorOrderCard({
 }) {
   const [uploadingEdit, setUploadingEdit] = useState(false);
   const [submittingDriveLink, setSubmittingDriveLink] = useState(false);
-  const [driveLinkUrl, setDriveLinkUrl] = useState("");
+  const [driveLinkUrl, setDriveLinkUrl] = useState(() => readEditedDriveLinkDraft(order.id));
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  function updateDriveLinkUrl(value: string) {
+    setDriveLinkUrl(value);
+    writeEditedDriveLinkDraft(order.id, value);
+  }
   const canDeliver = order.editedVideos.some((video) => video.reviewStatus === "satisfied");
   const submittingEditedVideo = uploadingEdit || submittingDriveLink;
 
@@ -598,7 +630,7 @@ function EditorOrderCard({
       return;
     }
 
-    setDriveLinkUrl("");
+    updateDriveLinkUrl("");
   }
 
   return (
@@ -740,7 +772,7 @@ function EditorOrderCard({
               type="url"
               disabled={submittingEditedVideo}
               value={driveLinkUrl}
-              onChange={(event) => setDriveLinkUrl(event.target.value)}
+              onChange={(event) => updateDriveLinkUrl(event.target.value)}
               placeholder="https://drive.google.com/file/d/..."
               className="w-full rounded-xl border border-white/10 bg-surface-800/60 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 disabled:opacity-50"
             />

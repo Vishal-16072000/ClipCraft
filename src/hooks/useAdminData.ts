@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   assignEditorClient,
   createAdminEditor,
@@ -15,13 +15,18 @@ export function useAdminOrders() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    if (!hasLoadedRef.current) {
+      setLoading(true);
+    }
+
     const { orders: data, error: err } = await fetchAdminOrders();
     setOrders(data);
     setError(err);
     setLoading(false);
+    hasLoadedRef.current = true;
   }, []);
 
   useEffect(() => {
@@ -39,13 +44,18 @@ export function useAdminProfiles() {
   const [profiles, setProfiles] = useState<AdminProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    if (!hasLoadedRef.current) {
+      setLoading(true);
+    }
+
     const { profiles: data, error: err } = await fetchAdminProfiles();
     setProfiles(data);
     setError(err);
     setLoading(false);
+    hasLoadedRef.current = true;
   }, []);
 
   useEffect(() => {

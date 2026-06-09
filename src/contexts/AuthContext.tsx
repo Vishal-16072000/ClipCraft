@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -124,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(initialEditor ? "editor" : null);
   const [editor, setEditor] = useState<EditorSession | null>(initialEditor);
   const [loading, setLoading] = useState(true);
+  const initialSessionHandledRef = useRef(Boolean(initialEditor));
 
   useEffect(() => {
     if (!supabase) {
@@ -166,18 +168,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setRole("editor");
         setLoading(false);
+        initialSessionHandledRef.current = true;
         return;
       }
 
       const nextUser = data.session?.user ?? null;
       setSession(data.session);
       setUser(nextUser);
-      loadProfileRole(nextUser).finally(() => setLoading(false));
+      loadProfileRole(nextUser).finally(() => {
+        setLoading(false);
+        initialSessionHandledRef.current = true;
+      });
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       const storedEditor = loadStoredEditorSession();
       if (storedEditor) {
         setEditor(storedEditor);
@@ -185,14 +191,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(createEditorUser(storedEditor));
         setRole("editor");
         setLoading(false);
+        initialSessionHandledRef.current = true;
         return;
       }
 
       const nextUser = nextSession?.user ?? null;
+
+      // Supabase re-fires SIGNED_IN every time a hidden tab becomes visible.
+      if (initialSessionHandledRef.current) {
+        if (event === "SIGNED_OUT") {
+          setSession(null);
+          setUser(null);
+          setRole(null);
+          setEditor(null);
+          return;
+        }
+
+        setSession(nextSession);
+        setUser(nextUser);
+        return;
+      }
+
       setLoading(true);
       setSession(nextSession);
       setUser(nextUser);
-      loadProfileRole(nextUser).finally(() => setLoading(false));
+      loadProfileRole(nextUser).finally(() => {
+        setLoading(false);
+        initialSessionHandledRef.current = true;
+      });
     });
 
     return () => subscription.unsubscribe();
