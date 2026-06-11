@@ -3,10 +3,10 @@ const { createClient } = require("@supabase/supabase-js");
 
 /** @type {Record<string, { monthly: number; yearly: number | null }>} */
 const PLAN_PRICES_INR = {
-  starter: { monthly: 999, yearly: 9999 },
-  creator: { monthly: 1999, yearly: 19999 },
-  pro: { monthly: 3499, yearly: 34999 },
-  business: { monthly: 6999, yearly: null },
+  starter: { monthly: 1798, yearly: 9999 },
+  creator: { monthly: 3499, yearly: 19999 },
+  pro: { monthly: 6598, yearly: 34999 },
+  business: { monthly: 12750, yearly: null },
 };
 
 function parseBearerToken(authorizationHeader) {
