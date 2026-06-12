@@ -1,6 +1,12 @@
 import { supabase } from "./supabase";
-import { UPLOADS_BUCKET } from "./orders";
-import type { EditedVideo, OrderFile, OrderStatus } from "./orders";
+import {
+  UPLOADS_BUCKET,
+  collectEditedVideoStoragePaths,
+  type EditedVideo,
+  type OrderFile,
+  type OrderStatus,
+} from "./orders";
+import { mapEditedVideoComment, type EditedVideoCommentRow } from "./editedVideoComments";
 
 export type EditorClient = {
   id: string;
@@ -61,6 +67,7 @@ type EditorOrderRow = {
     client_comment: string | null;
     created_at: string;
     reviewed_at: string | null;
+    comments?: EditedVideoCommentRow[] | null;
   }> | null;
 };
 
@@ -101,6 +108,7 @@ function mapEditorOrder(row: EditorOrderRow): EditorOrder {
       editorId: video.editor_id ?? undefined,
       reviewStatus: video.review_status,
       clientComment: video.client_comment ?? undefined,
+      comments: (video.comments ?? []).map(mapEditedVideoComment),
       createdAt: video.created_at,
       reviewedAt: video.reviewed_at ?? undefined,
     })),
@@ -219,4 +227,53 @@ export async function submitEditedVideoDriveLink(
   });
 
   return { error: error?.message ?? null };
+}
+
+export async function deleteEditorOrderFile(
+  accessToken: string,
+  orderId: string,
+  file: OrderFile,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const { error } = await supabase.rpc("editor_delete_order_file", {
+    editor_token: accessToken,
+    target_order_id: orderId,
+    target_file_id: file.id,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await supabase.storage.from(UPLOADS_BUCKET).remove([file.storagePath]);
+
+  return { error: null };
+}
+
+export async function deleteEditorEditedVideo(
+  accessToken: string,
+  video: EditedVideo,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const storagePaths = collectEditedVideoStoragePaths(video);
+  const { error } = await supabase.rpc("editor_delete_edited_video", {
+    editor_token: accessToken,
+    target_edited_video_id: video.id,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (storagePaths.length > 0) {
+    await supabase.storage.from(UPLOADS_BUCKET).remove(storagePaths);
+  }
+
+  return { error: null };
 }

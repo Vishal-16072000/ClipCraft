@@ -1,4 +1,9 @@
 import { supabase } from "./supabase";
+import {
+  mapEditedVideoComment,
+  type EditedVideoComment,
+  type EditedVideoCommentRow,
+} from "./editedVideoComments";
 
 export const UPLOADS_BUCKET = "uploads";
 
@@ -20,6 +25,7 @@ export type EditedVideo = {
   editorId?: string;
   reviewStatus: "pending" | "satisfied" | "changes_requested";
   clientComment?: string;
+  comments: EditedVideoComment[];
   createdAt: string;
   reviewedAt?: string;
 };
@@ -65,6 +71,8 @@ type OrderRow = {
     client_comment: string | null;
     created_at: string;
     reviewed_at: string | null;
+    edited_video_comments?: EditedVideoCommentRow[] | null;
+    comments?: EditedVideoCommentRow[] | null;
   }> | null;
 };
 
@@ -94,7 +102,19 @@ export const ORDER_SELECT_WITH_FOOTAGE = `
     review_status,
     client_comment,
     created_at,
-    reviewed_at
+    reviewed_at,
+    edited_video_comments (
+      id,
+      author_type,
+      author_user_id,
+      author_editor_id,
+      comment_type,
+      body,
+      audio_storage_path,
+      audio_duration_ms,
+      image_storage_path,
+      created_at
+    )
   )
 `;
 
@@ -144,18 +164,36 @@ export function mapOrder(row: OrderRow): Order {
       size: Number(f.size_bytes),
       storagePath: f.storage_path,
     })),
-    editedVideos: (row.edited_videos ?? []).map((video) => ({
-      id: video.id,
-      name: video.name,
-      size: Number(video.size_bytes),
-      storagePath: video.storage_path ?? undefined,
-      driveUrl: video.drive_url ?? undefined,
-      editorId: video.editor_id ?? undefined,
-      reviewStatus: video.review_status,
-      clientComment: video.client_comment ?? undefined,
-      createdAt: video.created_at,
-      reviewedAt: video.reviewed_at ?? undefined,
-    })),
+    editedVideos: (row.edited_videos ?? []).map((video) => {
+      const comments = (video.edited_video_comments ?? video.comments ?? []).map(
+        mapEditedVideoComment,
+      );
+
+      if (comments.length === 0 && video.client_comment) {
+        comments.push({
+          id: `legacy-${video.id}`,
+          authorType: "client",
+          authorUserId: row.user_id,
+          commentType: "text",
+          body: video.client_comment,
+          createdAt: video.reviewed_at ?? video.created_at,
+        });
+      }
+
+      return {
+        id: video.id,
+        name: video.name,
+        size: Number(video.size_bytes),
+        storagePath: video.storage_path ?? undefined,
+        driveUrl: video.drive_url ?? undefined,
+        editorId: video.editor_id ?? undefined,
+        reviewStatus: video.review_status,
+        clientComment: video.client_comment ?? undefined,
+        comments,
+        createdAt: video.created_at,
+        reviewedAt: video.reviewed_at ?? undefined,
+      };
+    }),
   };
 }
 
@@ -500,19 +538,83 @@ export async function updateOrderStatus(
 export async function reviewEditedVideo(
   editedVideoId: string,
   reviewStatus: "satisfied" | "changes_requested",
-  comment: string,
+  input:
+    | { commentType: "text"; comment: string }
+    | { commentType: "voice"; audioStoragePath: string; audioDurationMs?: number }
+    | { commentType: "image"; imageStoragePath: string }
+    | { commentType?: "text"; comment?: string } = { commentType: "text", comment: "" },
 ): Promise<{ error: string | null }> {
   if (!supabase) {
     return { error: "Supabase is not configured." };
   }
 
+  const commentType = input.commentType ?? "text";
+  const textComment =
+    commentType === "text" && "comment" in input ? input.comment?.trim() ?? "" : "";
+  const voicePath =
+    commentType === "voice" && "audioStoragePath" in input
+      ? input.audioStoragePath
+      : null;
+  const voiceDuration =
+    commentType === "voice" && "audioDurationMs" in input
+      ? input.audioDurationMs ?? null
+      : null;
+  const imagePath =
+    commentType === "image" && "imageStoragePath" in input ? input.imageStoragePath : null;
+
   const { error } = await supabase.rpc("client_review_edited_video", {
     target_edited_video_id: editedVideoId,
     next_review_status: reviewStatus,
-    review_comment: comment,
+    review_comment: commentType === "text" ? textComment : null,
+    review_comment_type: commentType,
+    review_audio_storage_path: voicePath,
+    review_audio_duration_ms: voiceDuration,
+    review_image_storage_path: imagePath,
   });
 
   return { error: error?.message ?? null };
+}
+
+export function collectEditedVideoStoragePaths(video: EditedVideo): string[] {
+  const paths = new Set<string>();
+
+  if (video.storagePath) {
+    paths.add(video.storagePath);
+  }
+
+  for (const comment of video.comments) {
+    if (comment.audioStoragePath) {
+      paths.add(comment.audioStoragePath);
+    }
+    if (comment.imageStoragePath) {
+      paths.add(comment.imageStoragePath);
+    }
+  }
+
+  return [...paths];
+}
+
+export async function deleteClientEditedVideo(
+  video: EditedVideo,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const storagePaths = collectEditedVideoStoragePaths(video);
+  const { error } = await supabase.rpc("client_delete_edited_video", {
+    target_edited_video_id: video.id,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (storagePaths.length > 0) {
+    await supabase.storage.from(UPLOADS_BUCKET).remove(storagePaths);
+  }
+
+  return { error: null };
 }
 
 export async function getSignedFileUrl(

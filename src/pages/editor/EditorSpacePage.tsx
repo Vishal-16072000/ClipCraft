@@ -14,9 +14,11 @@ import {
   PlayCircle,
   RefreshCw,
   Scissors,
+  Trash2,
   Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { EditedVideoCommentThread } from "../../components/dashboard/EditedVideoCommentThread";
 import { StatusBadge } from "../../components/dashboard/StatusBadge";
 import { useAuth } from "../../contexts/AuthContext";
 import { siteConfig } from "../../data/content";
@@ -31,7 +33,12 @@ import {
   type OrderFile,
   type OrderStatus,
 } from "../../lib/orders";
-import type { EditorOrder } from "../../lib/editor";
+import {
+  deleteEditorEditedVideo,
+  deleteEditorOrderFile,
+  type EditorOrder,
+} from "../../lib/editor";
+import { deleteAdminEditedVideo, deleteAdminOrderFile } from "../../lib/admin";
 
 type Filter = "all" | "active" | OrderStatus;
 type EditorSection = "overview" | "clients" | "orders";
@@ -488,6 +495,29 @@ export function EditorSpacePage() {
                       key={order.id}
                       order={order}
                       updating={updatingId === order.id}
+                      isAdminView={isAdminView}
+                      editorToken={editor?.accessToken}
+                      viewerUserId={user?.id}
+                      viewerEditorId={editor?.id}
+                      onCommentsChanged={refresh}
+                      onDeleteClip={async (orderId, file) => {
+                        if (isAdminView) {
+                          return deleteAdminOrderFile(orderId, file);
+                        }
+                        if (!editor?.accessToken) {
+                          return { error: "Editor session expired. Please sign in again." };
+                        }
+                        return deleteEditorOrderFile(editor.accessToken, orderId, file);
+                      }}
+                      onDeleteEditedVideo={async (video) => {
+                        if (isAdminView) {
+                          return deleteAdminEditedVideo(video);
+                        }
+                        if (!editor?.accessToken) {
+                          return { error: "Editor session expired. Please sign in again." };
+                        }
+                        return deleteEditorEditedVideo(editor.accessToken, video);
+                      }}
                       onStatusChange={handleStatusChange}
                       onUploadEdit={
                         isAdminView
@@ -571,12 +601,29 @@ function writeEditedDriveLinkDraft(orderId: string, value: string) {
 function EditorOrderCard({
   order,
   updating,
+  isAdminView,
+  editorToken,
+  viewerUserId,
+  viewerEditorId,
+  onCommentsChanged,
+  onDeleteClip,
+  onDeleteEditedVideo,
   onStatusChange,
   onUploadEdit,
   onSubmitEditDriveLink,
 }: {
   order: EditorOrder;
   updating: boolean;
+  isAdminView: boolean;
+  editorToken?: string;
+  viewerUserId?: string;
+  viewerEditorId?: string;
+  onCommentsChanged?: () => void | Promise<void>;
+  onDeleteClip?: (
+    orderId: string,
+    file: OrderFile,
+  ) => Promise<{ error: string | null }>;
+  onDeleteEditedVideo?: (video: EditedVideo) => Promise<{ error: string | null }>;
   onStatusChange: (orderId: string, status: OrderStatus) => void;
   onUploadEdit: (orderId: string, file: File) => Promise<{ error: string | null }>;
   onSubmitEditDriveLink: (orderId: string, driveUrl: string) => Promise<{ error: string | null }>;
@@ -585,6 +632,8 @@ function EditorOrderCard({
   const [submittingDriveLink, setSubmittingDriveLink] = useState(false);
   const [driveLinkUrl, setDriveLinkUrl] = useState(() => readEditedDriveLinkDraft(order.id));
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [removingFileId, setRemovingFileId] = useState<string | null>(null);
+  const [removingEditedVideoId, setRemovingEditedVideoId] = useState<string | null>(null);
 
   function updateDriveLinkUrl(value: string) {
     setDriveLinkUrl(value);
@@ -632,6 +681,42 @@ function EditorOrderCard({
 
     updateDriveLinkUrl("");
   }
+
+  async function handleDeleteClip(file: OrderFile) {
+    if (!onDeleteClip || removingFileId) return;
+
+    setUploadError(null);
+    setRemovingFileId(file.id);
+    const result = await onDeleteClip(order.id, file);
+    setRemovingFileId(null);
+
+    if (result.error) {
+      setUploadError(result.error);
+      return;
+    }
+
+    await onCommentsChanged?.();
+  }
+
+  async function handleDeleteEditedVideo(video: EditedVideo) {
+    if (!onDeleteEditedVideo || removingEditedVideoId) return;
+
+    setUploadError(null);
+    setRemovingEditedVideoId(video.id);
+    const result = await onDeleteEditedVideo(video);
+    setRemovingEditedVideoId(null);
+
+    if (result.error) {
+      setUploadError(result.error);
+      return;
+    }
+
+    await onCommentsChanged?.();
+  }
+
+  const commentViewer = isAdminView
+    ? { role: "admin" as const, userId: viewerUserId }
+    : { role: "editor" as const, editorId: viewerEditorId };
 
   return (
     <article className="glass rounded-2xl p-5">
@@ -702,7 +787,12 @@ function EditorOrderCard({
               </p>
               <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {order.files.map((file) => (
-                  <EditorVideoClip key={file.id} file={file} />
+                  <EditorVideoClip
+                    key={file.id}
+                    file={file}
+                    removing={removingFileId === file.id}
+                    onDelete={onDeleteClip ? () => handleDeleteClip(file) : undefined}
+                  />
                 ))}
               </ul>
             </div>
@@ -803,23 +893,29 @@ function EditorOrderCard({
           <div className="mt-4">
             <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {order.editedVideos.map((video) => (
-                <EditorVideoClip key={video.id} file={video}>
+                <EditorVideoClip
+                  key={video.id}
+                  file={video}
+                  removing={removingEditedVideoId === video.id}
+                  onDelete={
+                    onDeleteEditedVideo ? () => handleDeleteEditedVideo(video) : undefined
+                  }
+                >
                   <div className="mt-2 rounded-2xl border border-white/10 bg-surface-800/60 p-3 text-sm">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
                       <ReviewStatusBadge status={video.reviewStatus} />
                       <span className="text-xs text-gray-500">
                         Uploaded {formatDate(video.createdAt)}
                       </span>
                     </div>
-                    {video.clientComment ? (
-                      <p className="mt-2 whitespace-pre-wrap text-gray-300">
-                        {video.clientComment}
-                      </p>
-                    ) : (
-                      <p className="mt-2 text-xs text-gray-500">
-                        Client feedback has not been added yet.
-                      </p>
-                    )}
+                    <EditedVideoCommentThread
+                      editedVideoId={video.id}
+                      comments={video.comments}
+                      viewer={commentViewer}
+                      editorToken={isAdminView ? undefined : editorToken}
+                      onChanged={onCommentsChanged}
+                      compact
+                    />
                   </div>
                 </EditorVideoClip>
               ))}
@@ -848,7 +944,48 @@ function ReviewStatusBadge({ status }: { status: EditedVideo["reviewStatus"] }) 
 
 type VideoClipSource = OrderFile | EditedVideo;
 
-function EditorVideoClip({ file, children }: { file: VideoClipSource; children?: ReactNode }) {
+function ClipDeleteButton({
+  onDelete,
+  removing,
+  label,
+}: {
+  onDelete: () => void;
+  removing: boolean;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onDelete();
+      }}
+      disabled={removing}
+      className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-gray-300 backdrop-blur transition-colors hover:bg-red-500/20 hover:text-red-300 disabled:opacity-40"
+      aria-label={`Remove ${label}`}
+      title="Remove clip"
+    >
+      {removing ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Trash2 className="h-4 w-4" />
+      )}
+    </button>
+  );
+}
+
+function EditorVideoClip({
+  file,
+  children,
+  onDelete,
+  removing = false,
+}: {
+  file: VideoClipSource;
+  children?: ReactNode;
+  onDelete?: () => void;
+  removing?: boolean;
+}) {
   const [preview, setPreview] = useState<{
     storagePath: string;
     signedUrl: string | null;
@@ -878,18 +1015,26 @@ function EditorVideoClip({ file, children }: { file: VideoClipSource; children?:
   return (
     <li className="overflow-hidden rounded-2xl border border-white/10 bg-surface-800/60">
       {driveUrl ? (
-        <a
-          href={driveUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="flex aspect-video flex-col items-center justify-center gap-3 bg-surface-900/80 px-4 text-center transition-colors hover:bg-surface-900"
-        >
-          <Link2 className="h-8 w-8 text-brand-300" />
-          <span className="text-sm font-medium text-white">Open edited video on Google Drive</span>
-          <span className="line-clamp-2 text-xs text-gray-500">{driveUrl}</span>
-        </a>
+        <div className="relative">
+          {onDelete ? (
+            <ClipDeleteButton onDelete={onDelete} removing={removing} label={file.name} />
+          ) : null}
+          <a
+            href={driveUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex aspect-video flex-col items-center justify-center gap-3 bg-surface-900/80 px-4 text-center transition-colors hover:bg-surface-900"
+          >
+            <Link2 className="h-8 w-8 text-brand-300" />
+            <span className="text-sm font-medium text-white">Open edited video on Google Drive</span>
+            <span className="line-clamp-2 text-xs text-gray-500">{driveUrl}</span>
+          </a>
+        </div>
       ) : (
         <div className="relative aspect-video bg-black">
+          {onDelete ? (
+            <ClipDeleteButton onDelete={onDelete} removing={removing} label={file.name} />
+          ) : null}
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center text-gray-500">
               <Loader2 className="h-6 w-6 animate-spin" />

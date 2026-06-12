@@ -1,6 +1,9 @@
 import { supabase } from "./supabase";
+import { mapEditedVideoComment, type EditedVideoCommentRow } from "./editedVideoComments";
 import {
   ORDER_SELECT_WITH_FOOTAGE,
+  UPLOADS_BUCKET,
+  collectEditedVideoStoragePaths,
   mapOrder,
   type EditedVideo,
   type Order,
@@ -78,6 +81,7 @@ type AdminOrderRpcRow = {
     client_comment: string | null;
     created_at: string;
     reviewed_at: string | null;
+    comments?: EditedVideoCommentRow[] | null;
   }> | null;
 };
 
@@ -136,6 +140,7 @@ function mapAdminOrderRpc(row: AdminOrderRpcRow): AdminOrder {
       editorId: video.editor_id ?? undefined,
       reviewStatus: video.review_status,
       clientComment: video.client_comment ?? undefined,
+      comments: (video.comments ?? []).map(mapEditedVideoComment),
       createdAt: video.created_at,
       reviewedAt: video.reviewed_at ?? undefined,
     })),
@@ -303,4 +308,49 @@ export async function updateAdminOrderStatus(
 
   const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
   return { error: error?.message ?? null };
+}
+
+export async function deleteAdminOrderFile(
+  orderId: string,
+  file: OrderFile,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const { error } = await supabase.rpc("admin_delete_order_file", {
+    target_order_id: orderId,
+    target_file_id: file.id,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await supabase.storage.from(UPLOADS_BUCKET).remove([file.storagePath]);
+
+  return { error: null };
+}
+
+export async function deleteAdminEditedVideo(
+  video: EditedVideo,
+): Promise<{ error: string | null }> {
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const storagePaths = collectEditedVideoStoragePaths(video);
+  const { error } = await supabase.rpc("admin_delete_edited_video", {
+    target_edited_video_id: video.id,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (storagePaths.length > 0) {
+    await supabase.storage.from(UPLOADS_BUCKET).remove(storagePaths);
+  }
+
+  return { error: null };
 }

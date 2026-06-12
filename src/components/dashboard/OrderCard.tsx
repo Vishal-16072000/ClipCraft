@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import {
   addOrderFiles,
+  deleteClientEditedVideo,
   deleteOrderFile,
   getSignedFileUrl,
   reviewEditedVideo,
@@ -20,6 +21,7 @@ import {
   type Order,
   type OrderFile,
 } from "../../lib/orders";
+import { EditedVideoCommentThread } from "./EditedVideoCommentThread";
 import { StatusBadge } from "./StatusBadge";
 import { PipelineProgress } from "./PipelineProgress";
 
@@ -83,6 +85,20 @@ function UploadedVideoPlayer({
   return (
     <li className="overflow-hidden rounded-2xl border border-white/10 bg-surface-700/50">
       <div className="relative aspect-video bg-black">
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={removing}
+          className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-gray-300 backdrop-blur transition-colors hover:bg-red-500/20 hover:text-red-300 disabled:opacity-40"
+          aria-label={`Remove ${file.name}`}
+          title="Remove clip"
+        >
+          {removing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+        </button>
         {loading ? (
           <div className="absolute inset-0 flex items-center justify-center text-gray-500">
             <Loader2 className="h-6 w-6 animate-spin" />
@@ -109,20 +125,6 @@ function UploadedVideoPlayer({
           <p className="truncate text-sm text-white">{file.name}</p>
           <p className="text-xs text-gray-500">{formatSize(file.size)}</p>
         </div>
-        <button
-          type="button"
-          onClick={onRemove}
-          disabled={removing}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
-          aria-label={`Remove ${file.name}`}
-          title="Remove clip"
-        >
-          {removing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
-        </button>
       </div>
     </li>
   );
@@ -130,16 +132,21 @@ function UploadedVideoPlayer({
 
 function EditedVideoReview({
   video,
+  userId,
+  removing,
+  onRemove,
   onReviewed,
 }: {
   video: EditedVideo;
+  userId: string;
+  removing: boolean;
+  onRemove: () => void;
   onReviewed?: () => void | Promise<void>;
 }) {
   const [preview, setPreview] = useState<{
     storagePath: string;
     signedUrl: string | null;
   } | null>(null);
-  const [comment, setComment] = useState(video.clientComment ?? "");
   const [reviewing, setReviewing] = useState<"satisfied" | "changes_requested" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const loading = Boolean(video.storagePath) && preview?.storagePath !== video.storagePath;
@@ -165,10 +172,21 @@ function EditedVideoReview({
     };
   }, [video.storagePath]);
 
-  async function handleReview(nextStatus: "satisfied" | "changes_requested") {
+  async function handleReview(
+    nextStatus: "satisfied" | "changes_requested",
+    input:
+      | { commentType: "text"; comment: string }
+      | { commentType: "voice"; audioStoragePath: string; audioDurationMs?: number }
+      | { commentType: "image"; imageStoragePath: string }
+      | null,
+  ) {
     setError(null);
     setReviewing(nextStatus);
-    const result = await reviewEditedVideo(video.id, nextStatus, comment.trim());
+    const result = await reviewEditedVideo(
+      video.id,
+      nextStatus,
+      input ?? { commentType: "text", comment: "" },
+    );
     setReviewing(null);
 
     if (result.error) {
@@ -182,18 +200,48 @@ function EditedVideoReview({
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-surface-700/50">
       {video.driveUrl ? (
-        <a
-          href={video.driveUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="flex aspect-video flex-col items-center justify-center gap-3 bg-surface-900/80 px-4 text-center transition-colors hover:bg-surface-900"
-        >
-          <Link2 className="h-8 w-8 text-brand-400" />
-          <span className="text-sm font-medium text-white">Open edited video on Google Drive</span>
-          <span className="line-clamp-2 text-xs text-gray-500">{video.driveUrl}</span>
-        </a>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={removing}
+            className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-gray-300 backdrop-blur transition-colors hover:bg-red-500/20 hover:text-red-300 disabled:opacity-40"
+            aria-label={`Remove ${video.name}`}
+            title="Remove clip"
+          >
+            {removing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+          </button>
+          <a
+            href={video.driveUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex aspect-video flex-col items-center justify-center gap-3 bg-surface-900/80 px-4 text-center transition-colors hover:bg-surface-900"
+          >
+            <Link2 className="h-8 w-8 text-brand-400" />
+            <span className="text-sm font-medium text-white">Open edited video on Google Drive</span>
+            <span className="line-clamp-2 text-xs text-gray-500">{video.driveUrl}</span>
+          </a>
+        </div>
       ) : (
         <div className="relative aspect-video bg-black">
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={removing}
+            className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-gray-300 backdrop-blur transition-colors hover:bg-red-500/20 hover:text-red-300 disabled:opacity-40"
+            aria-label={`Remove ${video.name}`}
+            title="Remove clip"
+          >
+            {removing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+          </button>
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center text-gray-500">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -218,38 +266,19 @@ function EditedVideoReview({
             {video.reviewStatus.replace("_", " ")}
           </p>
         </div>
-        <textarea
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
-          rows={3}
-          placeholder="Add a comment for your editor"
-          className="w-full resize-none rounded-xl border border-white/10 bg-surface-800 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-brand-400"
+        <EditedVideoCommentThread
+          editedVideoId={video.id}
+          comments={video.comments}
+          viewer={{ role: "client", userId }}
+          onChanged={onReviewed}
+          onReview={handleReview}
+          reviewing={reviewing}
         />
         {error && (
           <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
             {error}
           </p>
         )}
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => handleReview("satisfied")}
-            disabled={reviewing !== null}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/25 disabled:opacity-50"
-          >
-            {reviewing === "satisfied" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Satisfied
-          </button>
-          <button
-            type="button"
-            onClick={() => handleReview("changes_requested")}
-            disabled={reviewing !== null}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-200 transition-colors hover:bg-amber-500/25 disabled:opacity-50"
-          >
-            {reviewing === "changes_requested" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Request changes
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -266,6 +295,7 @@ export function OrderCard({
 }) {
   const [adding, setAdding] = useState(false);
   const [removingFileId, setRemovingFileId] = useState<string | null>(null);
+  const [removingEditedVideoId, setRemovingEditedVideoId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   async function handleAddClips(e: React.ChangeEvent<HTMLInputElement>) {
@@ -299,6 +329,25 @@ export function OrderCard({
     setRemovingFileId(file.id);
     const { error } = await deleteOrderFile(order.userId, order.id, file);
     setRemovingFileId(null);
+
+    if (error) {
+      setActionError(error);
+      return;
+    }
+
+    await onChanged?.();
+  }
+
+  async function handleRemoveEditedVideo(video: EditedVideo) {
+    if (removingEditedVideoId) return;
+
+    const shouldRemove = window.confirm(`Remove "${video.name}" from this order?`);
+    if (!shouldRemove) return;
+
+    setActionError(null);
+    setRemovingEditedVideoId(video.id);
+    const { error } = await deleteClientEditedVideo(video);
+    setRemovingEditedVideoId(null);
 
     if (error) {
       setActionError(error);
@@ -421,7 +470,14 @@ export function OrderCard({
             </p>
             <div className="grid gap-4 lg:grid-cols-2">
               {order.editedVideos.map((video) => (
-                <EditedVideoReview key={video.id} video={video} onReviewed={onChanged} />
+                <EditedVideoReview
+                  key={video.id}
+                  video={video}
+                  userId={order.userId}
+                  removing={removingEditedVideoId === video.id}
+                  onRemove={() => handleRemoveEditedVideo(video)}
+                  onReviewed={onChanged}
+                />
               ))}
             </div>
           </div>
