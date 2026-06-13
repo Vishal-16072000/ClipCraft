@@ -114,6 +114,7 @@ $$;
 create table if not exists public.subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
+  customer_name text,
   plan_id text not null,
   billing_cycle text not null check (billing_cycle in ('monthly', 'yearly')),
   status text not null default 'pending'
